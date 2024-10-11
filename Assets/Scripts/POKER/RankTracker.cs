@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
+using Utility;
 
 namespace POKER
 {
@@ -225,7 +227,87 @@ namespace POKER
             highCard = cards.OrderByDescending(card => card.number).First();
             return true;
         }
+        
+        public static Rank CreateRank5Cards(in List<Card> cards)
+        {
+            if (IsRoyalFlush(cards))
+            {
+                return new Rank(HandRank.RoyalFlush, cards, new List<Card>());
+            }
 
+            if (IsStraightFlush(cards, out var highestCard))
+            {
+                return new Rank(HandRank.StraightFlush, cards, new List<Card> { highestCard });
+            }
+
+            if (IsFourOfAKind(cards, out var quadCard, out var fkKicker))
+            {
+                return new Rank(HandRank.FourOfAKind, cards, new List<Card> { quadCard, fkKicker });
+            }
+
+            if (IsFullHouse(cards, out var threeCard, out var pairCard))
+            {
+                return new Rank(HandRank.FullHouse, cards, new List<Card> { threeCard, pairCard });
+            }
+
+            if (IsFlush(cards, out var suit))
+            {
+                return new Rank(HandRank.Flush, cards, new List<Card>());
+            }
+
+            if (IsStraight(cards, out highestCard))
+            {
+                return new Rank(HandRank.Straight, cards, new List<Card> { highestCard });
+            }
+
+            if (IsThreeOfAKind(cards, out var tkThreeCard, out var firstKicker, out var secondKicker))
+            {
+                return new Rank(HandRank.ThreeOfAKind, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
+            }
+
+            if (IsTwoPair(cards, out var pairCards, out var kicker))
+            {
+                return new Rank(HandRank.TwoPair, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
+            }
+            
+            if(IsOnePair(cards, out var pair, out var kickers))
+            {
+                return new Rank(HandRank.Pair, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
+            }
+
+            Card highest = Card.None();
+            foreach (var card in cards)
+            {
+                if (card.number > highest.number)
+                {
+                    highest = card;
+                }
+            }
+         
+            return new Rank(HandRank.HighCard, cards, new List<Card> { highest });
+        }
+
+        public static Rank GetPossibleMaxRank(in List<Card> cards)
+        {
+            if (cards.Count < 5)
+            {
+                throw new System.Exception("Invalid number of cards. Expected at least 5, got " + cards.Count);
+            }
+
+            var combinations = Combinatorics.GetCombinations(cards, 5);
+            Rank bestRank = null;
+
+            foreach (var combination in combinations)
+            {
+                var rank = CreateRank5Cards(combination);
+                if (bestRank == null || rank.handRank > bestRank.handRank)
+                {
+                    bestRank = rank;
+                }
+            }
+
+            return bestRank;
+        }
     }
 
 

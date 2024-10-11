@@ -1,8 +1,7 @@
-using System;
-using JetBrains.Annotations;
-using UnityEngine;
-
-public class Poker
+namespace Poker
 {
+    public class Poker
+    {
     
+    }
 }
