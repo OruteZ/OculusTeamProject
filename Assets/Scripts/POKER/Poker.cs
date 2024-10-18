@@ -1,4 +1,4 @@
-namespace Poker
+namespace POKER
 {
     public class Poker
     {

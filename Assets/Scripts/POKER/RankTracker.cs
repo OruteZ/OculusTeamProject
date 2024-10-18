@@ -16,7 +16,7 @@ namespace POKER
             }
             
             // check is there any None card
-            if (cards.Exists(card => card.number == Number.None))
+            if (cards.Exists(card => card.number == Number.NONE))
             {
                 throw new System.Exception("Invalid card number. None is not allowed.");
             }
@@ -26,7 +26,7 @@ namespace POKER
         {
             Check(cards);
             
-            return IsStraightFlush(cards, out var none) && cards[0].number == Number.Ten;
+            return IsStraightFlush(cards, out var none) && cards[0].number == Number.X;
         }
 
         public static bool IsStraightFlush(in List<Card> cards, out Card highestCard)
@@ -50,7 +50,7 @@ namespace POKER
             
             // 예외처리 : 10 J Q K A
             if(sortedCards[0].number is Number.A &&
-               sortedCards[1].number is Number.Ten &&
+               sortedCards[1].number is Number.X &&
                 sortedCards[2].number is Number.J &&
                 sortedCards[3].number is Number.Q &&
                 sortedCards[4].number is Number.K)
@@ -78,7 +78,7 @@ namespace POKER
             var curSuit = cards[0].suit;
             bool isFlush = cards.TrueForAll(card => card.suit == curSuit);
             
-            suit = isFlush ? curSuit : Suit.Spade;
+            suit = isFlush ? curSuit : Suit.SPADE;
             return isFlush;
         }
         
@@ -86,14 +86,14 @@ namespace POKER
         {
             Check(cards);
             
-            var grouped = cards.GroupBy(card => card.number).ToList();
-            var fourGroup = grouped.FirstOrDefault(g => g.Count() == 4);
+            List<IGrouping<Number, Card>> grouped = cards.GroupBy(card => card.number).ToList();
+            IGrouping<Number, Card> fourGroup = grouped.FirstOrDefault(g => g.Count() == 4);
 
             if (fourGroup != null)
             {
                 quadCard = fourGroup.First();
                 
-                foreach(var c in cards)
+                foreach(Card c in cards)
                 {
                     if (c.number == quadCard.number) continue;
                     kicker = c;
@@ -110,9 +110,9 @@ namespace POKER
         {
             Check(cards);
             
-            var grouped = cards.GroupBy(card => card.number).ToList();
-            var threeGroup = grouped.FirstOrDefault(g => g.Count() == 3);
-            var pairGroup = grouped.FirstOrDefault(g => g.Count() == 2);
+            List<IGrouping<Number, Card>> grouped = cards.GroupBy(card => card.number).ToList();
+            IGrouping<Number, Card> threeGroup = grouped.FirstOrDefault(g => g.Count() == 3);
+            IGrouping<Number, Card> pairGroup = grouped.FirstOrDefault(g => g.Count() == 2);
 
             if (threeGroup != null && pairGroup != null)
             {
@@ -145,7 +145,7 @@ namespace POKER
                 {
                     if (c.number == threeCard.number) continue;
                     
-                    if (firstKicker.number == Number.None)
+                    if (firstKicker.number == Number.NONE)
                     {
                         firstKicker = c;
                     }
@@ -232,47 +232,47 @@ namespace POKER
         {
             if (IsRoyalFlush(cards))
             {
-                return new Rank(HandRank.RoyalFlush, cards, new List<Card>());
+                return new Rank(HandRank.ROYAL_FLUSH, cards, new List<Card>());
             }
 
             if (IsStraightFlush(cards, out var highestCard))
             {
-                return new Rank(HandRank.StraightFlush, cards, new List<Card> { highestCard });
+                return new Rank(HandRank.STRAIGHT_FLUSH, cards, new List<Card> { highestCard });
             }
 
             if (IsFourOfAKind(cards, out var quadCard, out var fkKicker))
             {
-                return new Rank(HandRank.FourOfAKind, cards, new List<Card> { quadCard, fkKicker });
+                return new Rank(HandRank.FOUR_OF_A_KIND, cards, new List<Card> { quadCard, fkKicker });
             }
 
             if (IsFullHouse(cards, out var threeCard, out var pairCard))
             {
-                return new Rank(HandRank.FullHouse, cards, new List<Card> { threeCard, pairCard });
+                return new Rank(HandRank.FULL_HOUSE, cards, new List<Card> { threeCard, pairCard });
             }
 
             if (IsFlush(cards, out var suit))
             {
-                return new Rank(HandRank.Flush, cards, new List<Card>());
+                return new Rank(HandRank.FLUSH, cards, new List<Card>());
             }
 
             if (IsStraight(cards, out highestCard))
             {
-                return new Rank(HandRank.Straight, cards, new List<Card> { highestCard });
+                return new Rank(HandRank.STRAIGHT, cards, new List<Card> { highestCard });
             }
 
             if (IsThreeOfAKind(cards, out var tkThreeCard, out var firstKicker, out var secondKicker))
             {
-                return new Rank(HandRank.ThreeOfAKind, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
+                return new Rank(HandRank.THREE_OF_A_KIND, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
             }
 
             if (IsTwoPair(cards, out var pairCards, out var kicker))
             {
-                return new Rank(HandRank.TwoPair, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
+                return new Rank(HandRank.TWO_PAIR, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
             }
             
             if(IsOnePair(cards, out var pair, out var kickers))
             {
-                return new Rank(HandRank.Pair, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
+                return new Rank(HandRank.PAIR, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
             }
 
             Card highest = Card.None();
@@ -284,9 +284,15 @@ namespace POKER
                 }
             }
          
-            return new Rank(HandRank.HighCard, cards, new List<Card> { highest });
+            return new Rank(HandRank.HIGH_CARD, cards, new List<Card> { highest });
         }
 
+        /// <summary>
+        /// 해당 카드 내에서 조합 가능한 가장 높은 Rank를 반환합니다.
+        /// </summary>
+        /// <param name="cards"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception">카드의 개수가 5개 미만일 경우 발생합니다.</exception>
         public static Rank GetPossibleMaxRank(in List<Card> cards)
         {
             if (cards.Count < 5)
@@ -313,15 +319,15 @@ namespace POKER
 
     public enum HandRank
     {
-        HighCard,
-        Pair,
-        TwoPair,
-        ThreeOfAKind,
-        Straight,
-        Flush,
-        FullHouse,
-        FourOfAKind,
-        StraightFlush,
-        RoyalFlush
+        HIGH_CARD,
+        PAIR,
+        TWO_PAIR,
+        THREE_OF_A_KIND,
+        STRAIGHT,
+        FLUSH,
+        FULL_HOUSE,
+        FOUR_OF_A_KIND,
+        STRAIGHT_FLUSH,
+        ROYAL_FLUSH
     }
 }

@@ -2,17 +2,17 @@ namespace POKER
 {
     public enum Number
     {
-        None,
+        NONE,
         A = 1,
-        Two = 2,
-        Three = 3,
-        Four = 4,
-        Five = 5,
-        Six = 6,
-        Seven = 7,
-        Eight = 8,
-        Nine = 9,
-        Ten = 10,
+        II = 2,
+        III = 3,
+        IV = 4,
+        V = 5,
+        VI = 6,
+        VII = 7,
+        VIII = 8,
+        IX = 9,
+        X = 10,
         J = 11,
         Q = 12,
         K = 13,
@@ -20,10 +20,10 @@ namespace POKER
 
     public enum Suit
     {
-        Spade,
-        Heart,
-        Diamond,
-        Club
+        SPADE,
+        HEART,
+        DIAMOND,
+        CLUB
     }
 
     public struct Card
@@ -42,6 +42,6 @@ namespace POKER
             return suit + " " + number;
         }
         
-        public static Card None() => new Card(Number.None, Suit.Spade);
+        public static Card None() => new Card(Number.NONE, Suit.SPADE);
     }
 }
