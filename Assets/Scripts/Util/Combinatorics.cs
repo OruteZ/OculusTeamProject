@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Utility
+namespace Util
 {
     public static class Combinatorics
     {
