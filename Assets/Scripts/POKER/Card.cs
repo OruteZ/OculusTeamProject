@@ -1,4 +1,4 @@
-namespace POKER
+namespace Poker
 {
     public enum Number
     {

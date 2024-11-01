@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 
-namespace POKER
+namespace Poker
 {
     public class Rank
     {
-        public HandRank handRank;
+        public readonly HandRank handRank;
         public List<Card> kickers;
         public List<Card> cards;
         

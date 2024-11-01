@@ -3,7 +3,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using Util;
 
-namespace POKER
+namespace Poker
 {
     public static class RankTracker
     {
