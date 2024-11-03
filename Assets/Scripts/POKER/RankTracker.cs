@@ -204,7 +204,7 @@ namespace Poker
             {
                 pairCard = pairGroup.First();
                 
-                foreach(var c in cards)
+                foreach(Card c in cards)
                 {
                     if (c.number == pairCard.number) continue;
                     kickers.Add(c);
@@ -235,12 +235,12 @@ namespace Poker
                 return new Rank(HandRank.ROYAL_FLUSH, cards, new List<Card>());
             }
 
-            if (IsStraightFlush(cards, out var highestCard))
+            if (IsStraightFlush(cards, out Card highestCard))
             {
                 return new Rank(HandRank.STRAIGHT_FLUSH, cards, new List<Card> { highestCard });
             }
 
-            if (IsFourOfAKind(cards, out var quadCard, out var fkKicker))
+            if (IsFourOfAKind(cards, out Card quadCard, out Card fkKicker))
             {
                 return new Rank(HandRank.FOUR_OF_A_KIND, cards, new List<Card> { quadCard, fkKicker });
             }

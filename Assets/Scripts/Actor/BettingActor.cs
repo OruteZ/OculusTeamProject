@@ -11,15 +11,20 @@ namespace Actor
     public abstract class BettingActor
     {
         private int _money;
+        private int _curRoundBet;
+        private bool _hasFolded;
+        private bool _isAllIn;
         
         protected void Bet(int amount)
         {
             BettingManager.Instance.Bet(amount);
+            
+            _curRoundBet += amount;
+            _money -= amount;
         }
 
         protected void Check()
         {
-            
         }
 
         protected void Fold()
@@ -29,7 +34,10 @@ namespace Actor
 
         protected void Raise(int amount)
         {
+            BettingManager.Instance.Bet(amount);
             
+            _curRoundBet += amount;
+            _money -= amount;
         }
 
         protected bool CanBet(int amount)
@@ -55,8 +63,22 @@ namespace Actor
         /// <summary>
         /// Fold했거나, All-in을 했거나 하는 등의 상황으로 베팅이 불가능한지 확인합니다.
         /// </summary>
-        public abstract bool CanParticipateInBetting();
+        public bool CanParticipateInBetting()
+        {
+            if(_hasFolded) return false;
+            if(_isAllIn) return false;
+            if(CanBet(_money) is false) return false;
+            
+            return true;
+        }
 
         public abstract IEnumerator Play();
+        
+        public void ResetRoundBet()
+        {
+            _curRoundBet = 0;
+            _isAllIn = false;
+            _hasFolded = false;
+        }
     }
 }
