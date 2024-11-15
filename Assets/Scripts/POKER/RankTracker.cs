@@ -303,9 +303,9 @@ namespace Poker
             var combinations = Combinatorics.GetCombinations(cards, 5);
             Rank bestRank = null;
 
-            foreach (var combination in combinations)
+            foreach (List<Card> combination in combinations)
             {
-                var rank = CreateRank5Cards(combination);
+                Rank rank = CreateRank5Cards(combination);
                 if (bestRank == null || rank.handRank > bestRank.handRank)
                 {
                     bestRank = rank;

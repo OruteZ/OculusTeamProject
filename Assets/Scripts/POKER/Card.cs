@@ -16,6 +16,8 @@ namespace Poker
         J = 11,
         Q = 12,
         K = 13,
+        
+        LENGTH = 14,
     }
 
     public enum Suit
@@ -23,7 +25,9 @@ namespace Poker
         SPADE,
         HEART,
         DIAMOND,
-        CLUB
+        CLUB,
+        
+        LENGTH = 4,
     }
 
     public struct Card

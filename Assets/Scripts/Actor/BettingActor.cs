@@ -1,4 +1,6 @@
 using System.Collections;
+using UnityEditor.Searcher;
+using UnityEngine;
 
 namespace Actor
 {
@@ -8,53 +10,57 @@ namespace Actor
     /// 이 과정에서 Callback 함수를 통한 구조는 복잡하기 때문에, 코루틴을 사용한 상호착용에 기반합니다.
     /// </summary>
     [System.Serializable]
-    public abstract class BettingActor
+    public abstract class BettingActor : MonoBehaviour
     {
+        [SerializeField]
         private int _money;
+        
+        [SerializeField]
         private int _curRoundBet;
+        
+        [SerializeField]
         private bool _hasFolded;
+        
+        [SerializeField]
         private bool _isAllIn;
         
-        protected void Bet(int amount)
+        
+        protected bool Call()
         {
-            BettingManager.Instance.Bet(amount);
+            int curRoundBet = BettingManager.Instance.GetCurrentBet();
+            int amount = curRoundBet - _curRoundBet;
+            
+            if(amount < 0) return false;
+            if (amount < _money) return false;
             
             _curRoundBet += amount;
             _money -= amount;
-        }
-
-        protected void Check()
-        {
-        }
-
-        protected void Fold()
-        {
             
+            return true;
         }
-
-        protected void Raise(int amount)
+        
+        protected bool Raise(int amount)
         {
-            BettingManager.Instance.Bet(amount);
+            if(amount < 0) return false;
+            if (amount < _money) return false;
             
             _curRoundBet += amount;
             _money -= amount;
-        }
-
-        protected bool CanBet(int amount)
-        {
-            if (BettingManager.Instance.CanBet(amount) is false)
-            {
-                return false;
-            }
-
-            if (amount > _money)
-            {
-                return false;
-            }
-
+            
             return true;
         }
 
+        protected bool Check()
+        {
+            if(CanCheck() is false) return false;
+            return true;
+        }
+
+        protected bool Fold()
+        {
+            _hasFolded = true;
+            return true;
+        }
         protected bool CanCheck()
         {
             return BettingManager.Instance.CanCheck();     
@@ -67,7 +73,7 @@ namespace Actor
         {
             if(_hasFolded) return false;
             if(_isAllIn) return false;
-            if(CanBet(_money) is false) return false;
+            // if(CanBet(_money) is false) return false;
             
             return true;
         }
@@ -80,5 +86,29 @@ namespace Actor
             _isAllIn = false;
             _hasFolded = false;
         }
+        
+        #region GETTER
+        
+        public int GetMoney()
+        {
+            return _money;
+        }
+        
+        public int GetCurRoundBet()
+        {
+            return _curRoundBet;
+        }
+        
+        public bool GetHasFolded()
+        {
+            return _hasFolded;
+        }
+        
+        public bool GetIsAllIn()
+        {
+            return _isAllIn;
+        }
+        
+        #endregion
     }
 }
