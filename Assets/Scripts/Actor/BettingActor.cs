@@ -27,6 +27,12 @@ namespace Actor
         
         protected bool Call()
         {
+            if (CanCheck())
+            {
+                Debug.LogWarning("Check를 할 수 있으면 Call을 할 수 없습니다. 임시로 Check를 호출합니다.");
+                return Check();
+            }
+            
             int curRoundBet = BettingManager.Instance.GetCurrentBet();
             int amount = curRoundBet - _curRoundBet;
             
@@ -35,6 +41,7 @@ namespace Actor
             
             _curRoundBet += amount;
             _money -= amount;
+            BettingManager.Instance.Bet(amount, _curRoundBet);
             
             return true;
         }
@@ -46,6 +53,7 @@ namespace Actor
             
             _curRoundBet += amount;
             _money -= amount;
+            BettingManager.Instance.Bet(amount, _curRoundBet);
             
             return true;
         }

@@ -8,11 +8,24 @@ namespace Actor
     {
         public override IEnumerator Play()
         {
-            yield return new WaitForSeconds(1.0f);
+            Debug.Log($"Player Turn : {gameObject.name}");
+            yield return new WaitForSeconds(1f);
+
+            if (CanCheck())
+            {
+                Raise(10);
+                    Debug.Log("AI Raised 10");
+                yield break;
+            }
             
             if (Call() is false)
             {
+                Debug.Log("AI Folded");
                 Fold();
+            }
+            else
+            {
+                Debug.Log("AI Called");
             }
         }
     }

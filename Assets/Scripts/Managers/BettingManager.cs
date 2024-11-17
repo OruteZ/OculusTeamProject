@@ -9,11 +9,17 @@ public class BettingManager : MonoBehaviour
 {
     public static BettingManager Instance { get; private set; }
 
-    private int _currentBet;
-    private int _totalPot;
+    [SerializeField] private int _currentBet;
+    [SerializeField] private int _totalPot;
     
     private void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        
         Instance = this;
     }
 
@@ -22,9 +28,14 @@ public class BettingManager : MonoBehaviour
         Instance = null;
     }
 
-    public void Bet(int add)
+    /// <summary>
+    /// Pot에 금액을 배팅합니다.
+    /// </summary>
+    /// <param name="add">추가하는 금액입니다.</param>
+    /// <param name="amount">현재 배팅금엑의 수 입니다.</param>
+    public void Bet(int add, int amount)
     {
-        _currentBet += add;
+        _currentBet = Mathf.Max(_currentBet, amount);
         _totalPot += add;
     }
 

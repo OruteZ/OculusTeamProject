@@ -12,6 +12,21 @@ public class TurnManager : MonoBehaviour
     [SerializeField] private List<BettingActor> _actors;
 
     private int _blindBtn;
+    
+    [SerializeField] private bool debugMode;
+    
+    private void Awake()
+    {
+        _cardController = FindObjectOfType<CardController>();
+        
+        // 자식 오브젝트의 BettingActor 컴포넌트를 가져옵니다.
+        _actors = GetComponentsInChildren<BettingActor>().ToList();
+    }
+    
+    private void Start()
+    {
+        StartCoroutine(PlayBet());
+    }
 
     private IEnumerator DealCommunityCards()
     {
@@ -33,6 +48,12 @@ public class TurnManager : MonoBehaviour
         {
             BettingActor actor = _actors[i % _actors.Count];
             if (actor.CanParticipateInBetting() is false) continue;
+            
+            // 만약 debug Mode가 켜져있다면, Space를 누를 때까지 기다립니다.
+            if (debugMode)
+            {
+                yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
+            }
             
             yield return actor.Play();
 
