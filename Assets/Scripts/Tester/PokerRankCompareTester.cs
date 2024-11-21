@@ -13,7 +13,7 @@ namespace Tester
             {
                 cards.Add(new Card(
                     (Number)Random.Range(1, (int)Number.LENGTH),
-                    (Suit) Random.Range(0,(int)Suit.LENGTH)
+                    (Suit  )Random.Range(0, (int)Suit  .LENGTH)
                     ));
             }
 

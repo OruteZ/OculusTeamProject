@@ -46,6 +46,17 @@ namespace Actor
             return true;
         }
         
+        protected bool Callable()
+        {
+            int curRoundBet = BettingManager.Instance.GetCurrentBet();
+            int amount = curRoundBet - _curRoundBet;
+            
+            if(amount < 0) return false;
+            if (amount < _money) return false;
+            
+            return true;
+        }
+        
         protected bool Raise(int amount)
         {
             if(amount < 0) return false;
@@ -81,7 +92,7 @@ namespace Actor
         {
             if(_hasFolded) return false;
             if(_isAllIn) return false;
-            // if(CanBet(_money) is false) return false;
+            if(Callable() is false) return false;
             
             return true;
         }

@@ -14,7 +14,7 @@ namespace Actor
             if (CanCheck())
             {
                 Raise(10);
-                    Debug.Log("AI Raised 10");
+                Debug.Log("AI Raised 10");
                 yield break;
             }
             
