@@ -18,4 +18,4 @@ ____
 
 ### Update 3 (2024/11/22)
 
-`Gambling Chips`, `Trump Cards`, `Character` 추가 완료하였습니다.<br>
+`Gambling Chips`, `Trump Cards`, `Characters` 추가 완료하였습니다.<br>
