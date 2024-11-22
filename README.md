@@ -15,3 +15,7 @@ ____
 `Normal Map` 적용 완료되었습니다.<br>
 또한, `.meta` file이 누락되어 있어 `.gitignore`을 수정하여 다시 업로드하였습니다.<br>
 ____
+
+### Update 3 (2024/11/22)
+
+`Gambling Chips`, `Trump Cards`, `Character` 추가 완료하였습니다.<br>
