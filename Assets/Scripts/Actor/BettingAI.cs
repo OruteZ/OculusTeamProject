@@ -7,70 +7,6 @@ using UnityEngine;
 
 namespace Actor
 {
-    // BettingActor 기본 클래스 구현
-    public abstract class BettingActor : MonoBehaviour
-    {
-        // 기본 상태 변수들
-        protected List<Card> hand = new List<Card>();          // 플레이어의 핸드 카드
-        protected List<Card> communityCards = new List<Card>(); // 커뮤니티 카드(공용 카드)
-        protected int currentBet;    // 현재 베팅 금액
-        protected int money;         // 보유 금액
-        protected int currentPot;    // 현재 팟의 크기
-        protected int position;      // 테이블에서의 위치
-        protected int playerCount;   // 전체 플레이어 수
-
-        // 실제 플레이를 수행하는 추상 메서드
-        public abstract IEnumerator Play();
-
-        // 베팅 액션: 레이즈
-        protected void Raise(int amount)
-        {
-            if (amount <= money)
-            {
-                money -= amount;
-                currentPot += amount;
-                currentBet = amount;
-            }
-        }
-
-        // 베팅 액션: 콜
-        protected void Call()
-        {
-            if (currentBet <= money)
-            {
-                money -= currentBet;
-                currentPot += currentBet;
-            }
-        }
-
-        // 베팅 액션: 체크
-        protected void Check()
-        {
-            // 체크 (액션 없음)
-        }
-
-        // 베팅 액션: 폴드
-        protected void Fold()
-        {
-            hand.Clear(); // 핸드를 포기하고 카드를 버림
-        }
-
-        // 체크 가능 여부 확인
-        protected bool CanCheck()
-        {
-            return currentBet == 0; // 현재 베팅이 없을 때만 체크 가능
-        }
-        
-        // Getter 메서드들
-        protected List<Card> GetHand() => hand;
-        protected List<Card> GetCommunityCards() => communityCards;
-        protected int GetCurrentBet() => currentBet;
-        protected int GetMoney() => money;
-        protected int GetCurrentPot() => currentPot;
-        protected int GetMyPosition() => position;
-        protected int GetPlayerCount() => playerCount;
-    }
-
     /// 포커 AI 클래스
     /// 실제 베팅 결정을 내리는 AI 구현
     public class BettingAI : BettingActor
@@ -149,7 +85,7 @@ namespace Actor
             }
         }
         
-        // AI의 플레이 로직
+        // AI 플레이 로직
         public override IEnumerator Play()
         {
             Debug.Log($"Player Turn : {gameObject.name}");
@@ -429,7 +365,7 @@ namespace Actor
                     return minBet * 2;  // 강한 밸류벳
 
                 case HandType.Draw:
-                    return Random.value > 0.7f ? minBet : -1;  // 30% 확률로 블러프
+                    return UnityEngine.Random.value > 0.7f ? minBet : -1;  // 30% 확률로 블러프
 
                 default:
                     return -1;  // 약한 핸드는 폴드
@@ -590,8 +526,16 @@ namespace Actor
             };
         }
 
-        // Helper methods for position-based play
-        private int GetPlayerCount() => 6; // 예시 값
-        private int GetMyPosition() => 2;  // 예시 값
+        protected override int GetPlayerCount()
+        {
+            // TODO: GameManager나 다른 방식으로 실제 플레이어 수를 가져오도록 구현
+            return 2; // 임시로 2명으로 설정
+        }
+        
+        protected override int GetMyPosition()
+        {
+            // TODO: GameManager나 다른 방식으로 실제 포지션을 가져오도록 구현
+            return 1; // 임시로 1번 위치로 설정
+        }
     }
 }
