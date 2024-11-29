@@ -7,16 +7,84 @@ using UnityEngine;
 
 namespace Actor
 {
-    public class BettingAI : BettingActor
+    // BettingActor 기본 클래스 구현
+    public abstract class BettingActor : MonoBehaviour
     {
-        private enum GameStage
+        // 기본 상태 변수들
+        protected List<Card> hand = new List<Card>();          // 플레이어의 핸드 카드
+        protected List<Card> communityCards = new List<Card>(); // 커뮤니티 카드(공용 카드)
+        protected int currentBet;    // 현재 베팅 금액
+        protected int money;         // 보유 금액
+        protected int currentPot;    // 현재 팟의 크기
+        protected int position;      // 테이블에서의 위치
+        protected int playerCount;   // 전체 플레이어 수
+
+        // 실제 플레이를 수행하는 추상 메서드
+        public abstract IEnumerator Play();
+
+        // 베팅 액션: 레이즈
+        protected void Raise(int amount)
         {
-            PreFlop,
-            Flop,
-            Turn,
-            River
+            if (amount <= money)
+            {
+                money -= amount;
+                currentPot += amount;
+                currentBet = amount;
+            }
         }
 
+        // 베팅 액션: 콜
+        protected void Call()
+        {
+            if (currentBet <= money)
+            {
+                money -= currentBet;
+                currentPot += currentBet;
+            }
+        }
+
+        // 베팅 액션: 체크
+        protected void Check()
+        {
+            // 체크 (액션 없음)
+        }
+
+        // 베팅 액션: 폴드
+        protected void Fold()
+        {
+            hand.Clear(); // 핸드를 포기하고 카드를 버림
+        }
+
+        // 체크 가능 여부 확인
+        protected bool CanCheck()
+        {
+            return currentBet == 0; // 현재 베팅이 없을 때만 체크 가능
+        }
+        
+        // Getter 메서드들
+        protected List<Card> GetHand() => hand;
+        protected List<Card> GetCommunityCards() => communityCards;
+        protected int GetCurrentBet() => currentBet;
+        protected int GetMoney() => money;
+        protected int GetCurrentPot() => currentPot;
+        protected int GetMyPosition() => position;
+        protected int GetPlayerCount() => playerCount;
+    }
+
+    /// 포커 AI 클래스
+    /// 실제 베팅 결정을 내리는 AI 구현
+    public class BettingAI : BettingActor
+    {
+        // 게임 진행 단계
+        private enum GameStage
+        {
+            PreFlop,    // 초기 카드 배분 후
+            Flop,       // 첫 3장의 커뮤니티 카드 공개
+            Turn,       // 4번째 커뮤니티 카드 공개
+            River       // 마지막 커뮤니티 카드 공개
+        }
+
+        // 가능한 포커 핸드 타입
         private enum HandType
         {
             Incomplete,
@@ -31,95 +99,160 @@ namespace Actor
             StraightFlush,
             Draw
         }
-
+        
+        // 포지션
         private enum Position
         {
-            Early,
-            Middle,
-            Late
+            Early,   // 초기 포지션 (불리한 위치)
+            Middle,  // 중간 포지션
+            Late    // 후반 포지션 (유리한 위치)
         }
 
-        private GameStage currentStage = GameStage.PreFlop;
-        private float suspicionLevel = 0f;
-        private const float MAX_SUSPICION = 100f;
-        private Position currentPosition;
+        // AI 상태 변수들
+        private GameStage currentStage = GameStage.PreFlop;    // 현재 게임 단계
+        private float suspicionLevel = 0f;                      // AI의 의심 수준 (블러핑 감지용)
+        private const float MAX_SUSPICION = 100f;               // 최대 의심 수준
+        private Position currentPosition;                       // 현재 포지션
+        
+        // 현재 포지션 getter
+        public Position CurrentPosition => currentPosition;
 
+        // 초기화
         private void Start()
         {
+            money = 1000; // 임시 시작 금액
+            
             // 게임 시작 시 포지션 설정
             UpdatePosition();
         }
 
+        // 포지션 업데이트 
         private void UpdatePosition()
         {
-            int playerCount = GetPlayerCount();
-            int myPosition = GetMyPosition();
+            try
+            {
+                int playerCount = GetPlayerCount();
+                int myPosition = GetMyPosition();
 
-            if (myPosition < playerCount / 3)
-                currentPosition = Position.Early;
-            else if (myPosition < (playerCount * 2) / 3)
-                currentPosition = Position.Middle;
-            else
-                currentPosition = Position.Late;
+                // 플레이어 수에 따라 포지션 결정
+                if (myPosition < playerCount / 3)
+                    currentPosition = Position.Early;
+                else if (myPosition < (playerCount * 2) / 3)
+                    currentPosition = Position.Middle;
+                else
+                    currentPosition = Position.Late;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error updating position: {e.Message}");
+                currentPosition = Position.Early;  // 에러 시 기본값
+            }
         }
-
+        
+        // AI의 플레이 로직
         public override IEnumerator Play()
         {
             Debug.Log($"Player Turn : {gameObject.name}");
             yield return new WaitForSeconds(1f);
 
-            UpdatePosition();
-            var handInfo = EvaluateHandStrength(GetHand(), GetCommunityCards());
+            try
+            {
+                UpdatePosition();
+                var hand = GetHand();
+                var communityCards = GetCommunityCards();
 
-            int decision = CalculateBettingDecision(
-                GetHand(),
-                GetCommunityCards(),
-                GetCurrentBet(),
-                GetMoney(),
-                GetCurrentPot(),
-                handInfo.strength,
-                handInfo.type
-            );
+                // 핸드 유효성 검사
+                if (hand == null || hand.Count == 0)
+                {
+                    Debug.LogError("Invalid hand");
+                    Fold();
+                    yield break;
+                }
+                
+                 // 핸드 강도 평가
+                var handInfo = EvaluateHandStrength(hand, communityCards);
 
-            ExecuteDecision(decision);
+                 // 베팅 결정
+                int decision = CalculateBettingDecision(
+                    hand,
+                    communityCards,
+                    GetCurrentBet(),
+                    GetMoney(),
+                    GetCurrentPot(),
+                    handInfo.strength,
+                    handInfo.type
+                );
+                // 결정 실행
+                ExecuteDecision(decision);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error during play: {e.Message}");
+                Fold(); // 에러 발생시 폴드
+            }
         }
 
+         // 핸드 강도 평가 메서드
+        private (float strength, HandType type) EvaluateHandStrength(List<Card> hand, List<Card> communityCards)
+        {
+            if (hand == null || communityCards == null)
+                return (0f, HandType.Incomplete);
+
+            var allCards = new List<Card>(hand);
+            allCards.AddRange(communityCards);
+
+            HandType handType = DetermineHandType(allCards);
+            float strength = CalculateHandStrength(hand, communityCards, handType);
+
+            return (strength, handType);
+        }
+        
+        // 베팅 결정 실행 메서드
         private void ExecuteDecision(int decision)
         {
-            if (decision > 0)
+            try
             {
-                Raise(decision);
-                Debug.Log($"AI Raised {decision}");
-                suspicionLevel += 5f;
-            }
-            else if (decision == 0)
-            {
-                if (CanCheck())
+                if (decision > 0)
                 {
-                    Check();
-                    Debug.Log("AI Checked");
+                    // 레이즈 결정
+                    Raise(decision);
+                    Debug.Log($"AI Raised {decision}");
+                    suspicionLevel += 5f;
                 }
-                else if (Call())
+                else if (decision == 0)
                 {
-                    Debug.Log("AI Called");
-                    suspicionLevel += 2f;
+                    if (CanCheck())
+                    {
+                        // 체크 가능할 때
+                        Check();
+                        Debug.Log("AI Checked");
+                    }
+                    else
+                    {
+                        // 체크 불가능할 때 콜
+                        Call();
+                        Debug.Log("AI Called");
+                        suspicionLevel += 2f;
+                    }
                 }
                 else
                 {
-                    Debug.Log("AI Folded - Couldn't call");
+                    // 폴드 결정
+                    Debug.Log("AI Folded");
                     Fold();
                 }
-            }
-            else
-            {
-                Debug.Log("AI Folded - Strategic decision");
-                Fold();
-            }
 
-            // 의심도 관리
-            suspicionLevel = Mathf.Clamp(suspicionLevel, 0f, MAX_SUSPICION);
+                // 의심도 관리
+                suspicionLevel = Mathf.Clamp(suspicionLevel, 0f, MAX_SUSPICION);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error executing decision: {e.Message}");
+                Fold(); // 에러 발생시 폴드
+            }
         }
 
+        // 베팅 액션 계산 메서드
         private static int CalculateBettingDecision(
             List<Card> hand,
             List<Card> communityCards,
@@ -129,11 +262,27 @@ namespace Actor
             float handStrength,
             HandType handType)
         {
+            if (myMoney <= 0) return -1; // 돈이 없으면 폴드
+
             GameStage stage = DetermineGameStage(communityCards);
+            
+            // 팟 오즈 계산 (수익률)
             float potOdds = currentBettingAmount > 0 ?
                 (float)currentBettingAmount / (currentPot + currentBettingAmount) : 0f;
+            
+            // 최소 베팅액 계산 (현재 베팅액의 2배 또는 보유 금액 중 작은 값)
             int minBet = Mathf.Min(myMoney, currentBettingAmount * 2);
 
+            // 블러핑 확률 계산
+            float bluffChance = CalculateBluffChance(stage, currentPosition, suspicionLevel);
+
+            // 랜덤 요소 추가
+            if (UnityEngine.Random.value < bluffChance)
+            {
+                return CalculateBluffAmount(minBet, myMoney, stage);
+            }
+            
+            // 게임 단계별 결정
             return stage switch
             {
                 GameStage.PreFlop => HandlePreFlopDecision(hand, currentBettingAmount, minBet),
@@ -144,6 +293,51 @@ namespace Actor
             };
         }
 
+        // 블러핑 확률 계산 메서드
+        private float CalculateBluffChance(GameStage stage, Position position, float suspicionLevel)
+        {
+            float baseChance = 0.1f; // 기본 블러핑 확률
+
+            // 게임 스테이지에 따른 조정
+            baseChance += stage switch
+            {
+                GameStage.PreFlop => 0.05f,
+                GameStage.Flop => 0.1f,
+                GameStage.Turn => 0.15f,
+                GameStage.River => 0.2f,
+                _ => 0f
+            };
+
+            // 포지션에 따른 조정
+            baseChance += position switch
+            {
+                Position.Late => 0.1f,   // 레이트 포지션에서 블러핑 확률 증가
+                Position.Middle => 0.05f, // 미들 포지션에서 약간 증가
+                _ => 0f                  // 얼리 포지션에서는 증가 없음
+            };
+
+            // 의심도에 따른 조정
+            baseChance -= suspicionLevel / MAX_SUSPICION * 0.2f;
+
+            return Mathf.Clamp(baseChance, 0.05f, 0.3f);
+        }
+
+        // 블러프 베팅액 계산 메서드
+        private int CalculateBluffAmount(int minBet, int myMoney, GameStage stage)
+        {
+            // 게임 단계별 블러프 배수 설정
+            float multiplier = stage switch
+            {
+                GameStage.PreFlop => 2f,
+                GameStage.Flop => 2.5f,
+                GameStage.Turn => 3f,
+                GameStage.River => 3.5f,
+                _ => 2f
+            };
+
+            return Mathf.Min((int)(minBet * multiplier), myMoney);
+        }
+        
         private static int HandlePreFlopDecision(List<Card> hand, int currentBet, int minBet)
         {
             Card card1 = hand[0];
