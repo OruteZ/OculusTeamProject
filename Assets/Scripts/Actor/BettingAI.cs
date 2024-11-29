@@ -253,7 +253,7 @@ namespace Actor
         }
 
         // 베팅 액션 계산 메서드
-        private static int CalculateBettingDecision(
+        private int CalculateBettingDecision(
             List<Card> hand,
             List<Card> communityCards,
             int currentBettingAmount,
@@ -338,7 +338,7 @@ namespace Actor
             return Mathf.Min((int)(minBet * multiplier), myMoney);
         }
         
-        private static int HandlePreFlopDecision(List<Card> hand, int currentBet, int minBet)
+        private int HandlePreFlopDecision(List<Card> hand, int currentBet, int minBet)
         {
             Card card1 = hand[0];
             Card card2 = hand[1];
