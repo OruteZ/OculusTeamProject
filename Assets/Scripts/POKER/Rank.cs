@@ -5,6 +5,24 @@ namespace Poker
 {
     public class Rank : IComparable<Rank>
     {
+        protected bool Equals(Rank other)
+        {
+            return handRank == other.handRank && Equals(kickers, other.kickers) && Equals(cards, other.cards);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((Rank)obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine((int)handRank, kickers, cards);
+        }
+
         public readonly HandRank handRank;
         public readonly List<Card> kickers;
         public List<Card> cards;

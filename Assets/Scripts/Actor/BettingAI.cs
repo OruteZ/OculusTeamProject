@@ -49,9 +49,6 @@ namespace Actor
         private float suspicionLevel = 0f;                      // AI의 의심 수준 (블러핑 감지용)
         private const float MAX_SUSPICION = 100f;               // 최대 의심 수준
         private Position currentPosition;                       // 현재 포지션
-        
-        // 현재 포지션 getter
-        public Position CurrentPosition => currentPosition;
 
         // 초기화
         private void Start()
@@ -85,7 +82,7 @@ namespace Actor
             }
         }
         
-        // AI 플레이 로직
+        // AI의 플레이 로직
         public override IEnumerator Play()
         {
             Debug.Log($"Player Turn : {gameObject.name}");
@@ -94,8 +91,8 @@ namespace Actor
             try
             {
                 UpdatePosition();
-                var hand = GetHand();
-                var communityCards = GetCommunityCards();
+                var hand = GetCards();
+                var communityCards = BettingManager.Instance.GetCommunityCards();
 
                 // 핸드 유효성 검사
                 if (hand == null || hand.Count == 0)
@@ -109,15 +106,16 @@ namespace Actor
                 var handInfo = EvaluateHandStrength(hand, communityCards);
 
                  // 베팅 결정
-                int decision = CalculateBettingDecision(
-                    hand,
-                    communityCards,
-                    GetCurrentBet(),
-                    GetMoney(),
-                    GetCurrentPot(),
+                 int decision = CalculateBettingDecision(
+                     hand,
+                     communityCards,
+                     GetCurRoundBet(),
+                     GetMoney(),
+                     BettingManager.Instance.GetCurrentBet(),
                     handInfo.strength,
                     handInfo.type
                 );
+                
                 // 결정 실행
                 ExecuteDecision(decision);
             }
@@ -278,31 +276,31 @@ namespace Actor
         {
             Card card1 = hand[0];
             Card card2 = hand[1];
-            bool isPaired = card1.rank == card2.rank;
+            bool isPaired = card1.number == card2.number;
             bool isSuited = card1.suit == card2.suit;
 
             // 프리미엄 핸드 (AA, KK, QQ, JJ, AK)
-            if (isPaired && (int)card1.rank >= (int)Rank.Jack ||
-                (card1.rank == Rank.Ace && card2.rank == Rank.King))
+            if (isPaired && (int)card1.number >= (int)Number.J ||
+                (card1.number == Number.A && card2.number == Number.K))
             {
                 return minBet * 3;  // 강한 레이즈
             }
 
             // 중간 강도 페어 (TT, 99, 88)
-            if (isPaired && (int)card1.rank >= (int)Rank.Eight)
+            if (isPaired && (int)card1.number >= (int)Number.VIII)
             {
-                return Position == Position.Late ? minBet * 2 : currentBet;
+                return currentPosition == Position.Late ? minBet * 2 : currentBet;
             }
 
             // 강한 에이스, 킹 (AQ, AJ, KQ, KJ)
-            if ((card1.rank == Rank.Ace || card1.rank == Rank.King) &&
-                ((int)card2.rank >= (int)Rank.Jack))
+            if ((card1.number == Number.A || card1.number == Number.K) &&
+                ((int)card2.number >= (int)Number.J))
             {
-                return Position == Position.Late ? minBet * 2 : currentBet;
+                return currentPosition == Position.Late ? minBet * 2 : currentBet;
             }
 
             // 약한 핸드
-            return Position == Position.Late && IsPlayableHand(card1, card2) ? currentBet : -1;
+            return currentPosition == Position.Late && IsPlayableHand(card1, card2) ? currentBet : -1;
         }
 
         private static int HandleFlopDecision(float handStrength, HandType handType, float potOdds, int currentBet, int minBet)
@@ -377,7 +375,7 @@ namespace Actor
             if (cards.Count < 5) return HandType.Incomplete;
 
             // 카드를 랭크와 슈트별로 그룹화
-            var rankGroups = cards.GroupBy(c => c.rank).OrderByDescending(g => g.Count());
+            var rankGroups = cards.GroupBy(c => c.number).OrderByDescending(g => g.Count());
             var suitGroups = cards.GroupBy(c => c.suit);
 
             // 스트레이트 플러시 체크
@@ -423,7 +421,7 @@ namespace Actor
 
         private static bool HasStraight(List<Card> cards)
         {
-            var orderedRanks = cards.Select(c => (int)c.rank).Distinct().OrderBy(r => r).ToList();
+            var orderedRanks = cards.Select(c => (int)c.number).Distinct().OrderBy(r => r).ToList();
 
             for (int i = 0; i <= orderedRanks.Count - 5; i++)
             {
@@ -448,7 +446,7 @@ namespace Actor
             bool hasFlushDraw = cards.GroupBy(c => c.suit).Any(g => g.Count() == 4);
 
             // 스트레이트 드로우
-            var orderedRanks = cards.Select(c => (int)c.rank).Distinct().OrderBy(r => r).ToList();
+            var orderedRanks = cards.Select(c => (int)c.number).Distinct().OrderBy(r => r).ToList();
             bool hasStraightDraw = false;
 
             for (int i = 0; i < orderedRanks.Count - 3; i++)
@@ -468,10 +466,10 @@ namespace Actor
             float baseStrength = (float)handType / 10f; // 기본 핸드 타입 강도
 
             // 하이카드 가치 추가
-            float highCardValue = hand.Max(c => (float)c.rank / 14f) * 0.2f;
+            float highCardValue = hand.Max(c => (float)c.number / 14f) * 0.2f;
 
             // 키커 가치 추가
-            float kickerValue = hand.Min(c => (float)c.rank / 14f) * 0.1f;
+            float kickerValue = hand.Min(c => (float)c.number / 14f) * 0.1f;
 
             // 드로우 가치 계산
             float drawValue = 0f;
@@ -494,7 +492,7 @@ namespace Actor
             bool hasFlushDraw = cards.GroupBy(c => c.suit).Any(g => g.Count() == 4);
             if (hasFlushDraw) return HandType.Draw;
 
-            var orderedRanks = cards.Select(c => (int)c.rank).OrderBy(r => r).ToList();
+            var orderedRanks = cards.Select(c => (int)c.number).OrderBy(r => r).ToList();
             int gaps = 0;
             for (int i = 0; i < orderedRanks.Count - 1; i++)
             {
@@ -508,10 +506,10 @@ namespace Actor
         private static bool IsPlayableHand(Card card1, Card card2)
         {
             bool isSuited = card1.suit == card2.suit;
-            int rankDiff = Mathf.Abs((int)card1.rank - (int)card2.rank);
+            int rankDiff = Mathf.Abs((int)card1.number - (int)card2.number);
 
             return (rankDiff <= 2 && isSuited) ||
-                   ((int)card1.rank >= (int)Rank.Ten && (int)card2.rank >= (int)Rank.Ten);
+                   ((int)card1.number >= (int)Number.X && (int)card2.number >= (int)Number.X);
         }
 
         private static GameStage DetermineGameStage(List<Card> communityCards)
@@ -526,16 +524,8 @@ namespace Actor
             };
         }
 
-        protected override int GetPlayerCount()
-        {
-            // TODO: GameManager나 다른 방식으로 실제 플레이어 수를 가져오도록 구현
-            return 2; // 임시로 2명으로 설정
-        }
-        
-        protected override int GetMyPosition()
-        {
-            // TODO: GameManager나 다른 방식으로 실제 포지션을 가져오도록 구현
-            return 1; // 임시로 1번 위치로 설정
-        }
+        // Helper methods for position-based play
+        private int GetPlayerCount() => 6; // 예시 값
+        private int GetMyPosition() => 2;  // 예시 값
     }
 }

@@ -1,6 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
+using Poker;
 using UnityEditor.Searcher;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Actor
 {
@@ -13,7 +16,7 @@ namespace Actor
     public abstract class BettingActor : MonoBehaviour
     {
         [SerializeField]
-        private int _money;
+        protected int money;
         
         [SerializeField]
         private int _curRoundBet;
@@ -23,6 +26,12 @@ namespace Actor
         
         [SerializeField]
         private bool _isAllIn;
+        
+        [SerializeField]
+        private BettingChipVisualizer _bettingChipVisualizer;
+        
+        [SerializeField]
+        private List<Card> _cards;
         
         
         protected bool Call()
@@ -37,10 +46,10 @@ namespace Actor
             int amount = curRoundBet - _curRoundBet;
             
             if(amount < 0) return false;
-            if (amount < _money) return false;
+            if (amount < money) return false;
             
             _curRoundBet += amount;
-            _money -= amount;
+            money -= amount;
             BettingManager.Instance.Bet(amount, _curRoundBet);
             
             return true;
@@ -52,7 +61,7 @@ namespace Actor
             int amount = curRoundBet - _curRoundBet;
             
             if(amount < 0) return false;
-            if (amount < _money) return false;
+            if (amount < money) return false;
             
             return true;
         }
@@ -60,10 +69,10 @@ namespace Actor
         protected bool Raise(int amount)
         {
             if(amount < 0) return false;
-            if (amount < _money) return false;
+            if (amount < money) return false;
             
             _curRoundBet += amount;
-            _money -= amount;
+            money -= amount;
             BettingManager.Instance.Bet(amount, _curRoundBet);
             
             return true;
@@ -92,9 +101,8 @@ namespace Actor
         {
             if(_hasFolded) return false;
             if(_isAllIn) return false;
-            if(Callable() is false) return false;
             
-            return true;
+            return Callable();
         }
 
         public abstract IEnumerator Play();
@@ -110,7 +118,7 @@ namespace Actor
         
         public int GetMoney()
         {
-            return _money;
+            return money;
         }
         
         public int GetCurRoundBet()
@@ -126,6 +134,11 @@ namespace Actor
         public bool GetIsAllIn()
         {
             return _isAllIn;
+        }
+        
+        public List<Card> GetCards()
+        {
+            return new List<Card>(_cards);
         }
         
         #endregion

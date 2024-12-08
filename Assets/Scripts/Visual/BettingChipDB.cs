@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[CreateAssetMenu(fileName = "BettingChipDB", menuName = "BettingChipDB")]
 public class BettingChipDB : ScriptableObject
 {
     [SerializeField] private List<BettingChip> _bettingChips;

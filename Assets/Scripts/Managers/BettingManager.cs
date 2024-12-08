@@ -11,6 +11,7 @@ public class BettingManager : MonoBehaviour
 
     [SerializeField] private int _currentBet;
     [SerializeField] private int _totalPot;
+    [SerializeField] private List<Card> _communityCards;
     
     private void Awake()
     {
@@ -59,5 +60,10 @@ public class BettingManager : MonoBehaviour
     public int GetCurrentBet()
     {
         return _currentBet;
+    }
+
+    public List<Card> GetCommunityCards()
+    {
+        return _communityCards;
     }
 }
