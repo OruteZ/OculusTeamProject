@@ -66,7 +66,7 @@ public class DeckObject : MonoBehaviour
     /// </summary>
     public void Shuffle()
     {
-        for (int i = 0; i < _cards.Count; i++)
+        for (int i = 0; i < _cards.Count / 2; i++)
         {
             int rnd = Random.Range(i, _cards.Count);
             (_cards[rnd], _cards[i]) = (_cards[i], _cards[rnd]);
@@ -86,7 +86,9 @@ public class DeckObject : MonoBehaviour
         for (int i = 0; i < _cards.Count; i++)
         {
             CardObject card = _cards[i];
-            card.transform.SetParent(this.transform, worldPositionStays: false);
+            if (card == null) continue;
+            
+            card.transform.SetParent(transform, worldPositionStays: false);
 
             // 카드 위치: 덱의 transform을 기준으로 위로 쌓이게 (예: localPosition y 증가)
             Vector3 pos = new Vector3(0, i * cardStackOffset, 0); // 카드가 뒤로 쌓이는 형태
@@ -135,8 +137,8 @@ public class DeckObject : MonoBehaviour
     {
         if (_cards.Count == 0) return null;
         
-        CardObject topCard = _cards[^1];
-        _cards.RemoveAt(_cards.Count - 1);
+        CardObject topCard = _cards.FindLast(card => card != null);
+        _cards.Remove(topCard);
         
         if(newCard == null) _cards.Add(newCard);
         

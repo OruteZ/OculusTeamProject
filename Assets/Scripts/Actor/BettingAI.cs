@@ -11,14 +11,6 @@ namespace Actor
     /// 실제 베팅 결정을 내리는 AI 구현
     public class BettingAI : BettingActor
     {
-        // 게임 진행 단계
-        private enum GameStage
-        {
-            PreFlop,    // 초기 카드 배분 후
-            Flop,       // 첫 3장의 커뮤니티 카드 공개
-            Turn,       // 4번째 커뮤니티 카드 공개
-            River       // 마지막 커뮤니티 카드 공개
-        }
 
         // 가능한 포커 핸드 타입
         private enum HandType
@@ -45,7 +37,7 @@ namespace Actor
         }
 
         // AI 상태 변수들
-        private GameStage currentStage = GameStage.PreFlop;    // 현재 게임 단계
+        private Round _currentStage = Round.PreFlop;            // 현재 게임 단계
         private float suspicionLevel = 0f;                      // AI의 의심 수준 (블러핑 감지용)
         private const float MAX_SUSPICION = 100f;               // 최대 의심 수준
         private Position currentPosition;                       // 현재 포지션
@@ -91,8 +83,10 @@ namespace Actor
             try
             {
                 UpdatePosition();
-                var hand = GetContainer().GetCards();
-                var communityCards = BettingManager.Instance.GetCommunityCards();
+                List<Card> hand 
+                    = GetContainer().GetCards();
+                List<Card> communityCards 
+                    = TurnSystem.Instance.GetCommunityCards();
 
                 // 핸드 유효성 검사
                 if (hand == null || hand.Count == 0)
@@ -103,7 +97,8 @@ namespace Actor
                 }
                 
                  // 핸드 강도 평가
-                var handInfo = EvaluateHandStrength(hand, communityCards);
+                (float strength, HandType type)
+                    handInfo = EvaluateHandStrength(hand, communityCards);
 
                  // 베팅 결정
                  int decision = CalculateBettingDecision(
@@ -111,7 +106,7 @@ namespace Actor
                      communityCards,
                      GetCurRoundBet(),
                      GetMoney(),
-                     BettingManager.Instance.GetCurrentBet(),
+                     BettingSystem.Instance.GetCurrentBet(),
                     handInfo.strength,
                     handInfo.type
                 );
@@ -127,12 +122,13 @@ namespace Actor
         }
 
          // 핸드 강도 평가 메서드
-        private (float strength, HandType type) EvaluateHandStrength(List<Card> hand, List<Card> communityCards)
+        private static (float strength, HandType type) 
+            EvaluateHandStrength(List<Card> hand, List<Card> communityCards)
         {
             if (hand == null || communityCards == null)
                 return (0f, HandType.Incomplete);
 
-            var allCards = new List<Card>(hand);
+            List<Card> allCards = new List<Card>(hand);
             allCards.AddRange(communityCards);
 
             HandType handType = DetermineHandType(allCards);
@@ -146,34 +142,30 @@ namespace Actor
         {
             try
             {
-                if (decision > 0)
+                switch (decision)
                 {
-                    // 레이즈 결정
-                    Raise(decision);
-                    Debug.Log($"AI Raised {decision}");
-                    suspicionLevel += 5f;
-                }
-                else if (decision == 0)
-                {
-                    if (CanCheck())
-                    {
+                    case > 0:
+                        // 레이즈 결정
+                        Raise(decision);
+                        Debug.Log($"AI Raised {decision}");
+                        suspicionLevel += 5f;
+                        break;
+                    case 0 when CanCheck():
                         // 체크 가능할 때
                         Check();
                         Debug.Log("AI Checked");
-                    }
-                    else
-                    {
+                        break;
+                    case 0:
                         // 체크 불가능할 때 콜
                         Call();
                         Debug.Log("AI Called");
                         suspicionLevel += 2f;
-                    }
-                }
-                else
-                {
-                    // 폴드 결정
-                    Debug.Log("AI Folded");
-                    Fold();
+                        break;
+                    default:
+                        // 폴드 결정
+                        Debug.Log("AI Folded");
+                        Fold();
+                        break;
                 }
 
                 // 의심도 관리
@@ -198,7 +190,7 @@ namespace Actor
         {
             if (myMoney <= 0) return -1; // 돈이 없으면 폴드
 
-            GameStage stage = DetermineGameStage(communityCards);
+            Round stage = DetermineGameStage(communityCards);
             
             // 팟 오즈 계산 (수익률)
             float potOdds = currentBettingAmount > 0 ?
@@ -219,26 +211,26 @@ namespace Actor
             // 게임 단계별 결정
             return stage switch
             {
-                GameStage.PreFlop => HandlePreFlopDecision(hand, currentBettingAmount, minBet),
-                GameStage.Flop => HandleFlopDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
-                GameStage.Turn => HandleTurnDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
-                GameStage.River => HandleRiverDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
+                Round.PreFlop => HandlePreFlopDecision(hand, currentBettingAmount, minBet),
+                Round.Flop => HandleFlopDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
+                Round.Turn => HandleTurnDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
+                Round.River => HandleRiverDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
                 _ => 0
             };
         }
 
         // 블러핑 확률 계산 메서드
-        private float CalculateBluffChance(GameStage stage, Position position, float suspicionLevel)
+        private float CalculateBluffChance(Round stage, Position position, float suspicionLevel)
         {
             float baseChance = 0.1f; // 기본 블러핑 확률
 
             // 게임 스테이지에 따른 조정
             baseChance += stage switch
             {
-                GameStage.PreFlop => 0.05f,
-                GameStage.Flop => 0.1f,
-                GameStage.Turn => 0.15f,
-                GameStage.River => 0.2f,
+                Round.PreFlop => 0.05f,
+                Round.Flop => 0.1f,
+                Round.Turn => 0.15f,
+                Round.River => 0.2f,
                 _ => 0f
             };
 
@@ -257,15 +249,15 @@ namespace Actor
         }
 
         // 블러프 베팅액 계산 메서드
-        private int CalculateBluffAmount(int minBet, int myMoney, GameStage stage)
+        private int CalculateBluffAmount(int minBet, int myMoney, Round stage)
         {
             // 게임 단계별 블러프 배수 설정
             float multiplier = stage switch
             {
-                GameStage.PreFlop => 2f,
-                GameStage.Flop => 2.5f,
-                GameStage.Turn => 3f,
-                GameStage.River => 3.5f,
+                Round.PreFlop => 2f,
+                Round.Flop => 2.5f,
+                Round.Turn => 3f,
+                Round.River => 3.5f,
                 _ => 2f
             };
 
@@ -487,12 +479,12 @@ namespace Actor
             return Mathf.Clamp01(baseStrength + highCardValue + kickerValue + drawValue);
         }
 
-        private static HandType AnalyzeDraws(List<Card> cards)
+        private static HandType AnalyzeDraws(IReadOnlyCollection<Card> cards)
         {
             bool hasFlushDraw = cards.GroupBy(c => c.suit).Any(g => g.Count() == 4);
             if (hasFlushDraw) return HandType.Draw;
 
-            var orderedRanks = cards.Select(c => (int)c.number).OrderBy(r => r).ToList();
+            List<int> orderedRanks = cards.Select(c => (int)c.number).OrderBy(r => r).ToList();
             int gaps = 0;
             for (int i = 0; i < orderedRanks.Count - 1; i++)
             {
@@ -512,20 +504,20 @@ namespace Actor
                    ((int)card1.number >= (int)Number.X && (int)card2.number >= (int)Number.X);
         }
 
-        private static GameStage DetermineGameStage(List<Card> communityCards)
+        private static Round DetermineGameStage(ICollection communityCards)
         {
             return communityCards.Count switch
             {
-                0 => GameStage.PreFlop,
-                3 => GameStage.Flop,
-                4 => GameStage.Turn,
-                5 => GameStage.River,
-                _ => GameStage.PreFlop
+                0 => Round.PreFlop,
+                3 => Round.Flop,
+                4 => Round.Turn,
+                5 => Round.River,
+                _ => Round.PreFlop
             };
         }
 
         // Helper methods for position-based play
-        private int GetPlayerCount() => 6; // 예시 값
-        private int GetMyPosition() => 2;  // 예시 값
+        private int GetPlayerCount() => TurnSystem.Instance.GetActorCount();
+        private int GetMyPosition() => TurnSystem.Instance.GetPosition(this);
     }
 }

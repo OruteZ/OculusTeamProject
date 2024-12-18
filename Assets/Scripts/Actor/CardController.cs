@@ -23,6 +23,7 @@ namespace Actor
         [SerializeField] private bool dealingFlag;
         [SerializeField] private CardContainer dealingTarget;
         [SerializeField] private int dealingCount;
+        [SerializeField] private bool throwing;
 
         private WaitUntil _dealingWaitUntil;
 
@@ -59,27 +60,53 @@ namespace Actor
 
         private void OnDeal(InputAction.CallbackContext context)
         {
+            if(dealingFlag == false)
+            {
+                Debug.LogWarning("Deal 명령이 들어왔지만, Deal 중이 아닙니다.");
+                return;
+            }
+            
+            if(throwing)
+            {
+                Debug.LogWarning("Deal 중에 카드를 던지고 있습니다.");
+                return;
+            }
+            
             if(_currentDeck == null)
             {
                 Debug.LogWarning("Deck이 할당되지 않았습니다.");
                 return;
             }
-
-            if (_currentDeck.GetHeadingContainer() != dealingTarget)
-            {
-                Debug.LogWarning("Deal 대상이 아닌 Container에 Deal을 시도하고 있습니다.");
-                // todo : 의심도 증가
-                return;
-            }
-
+            //
+            // if (_currentDeck.GetHeadingContainer() != dealingTarget)
+            // {
+            //     Debug.LogWarning("Deal 대상이 아닌 Container에 Deal을 시도하고 있습니다.");
+            //     // todo : 의심도 증가
+            //     return;
+            // }
+            
+            // todo : 테스트용으로 target으로 바로 쏩니다. 컨트롤러 들고 테스트가 필요합니다.
+            
             CardObject card = _currentDeck.PopTopCard();
             if (card == null)
             {
-                Debug.LogWarning("Deck에서 카드를 가져오는 데 실패했습니다.");
+                Debug.LogError("Deck에서 카드를 가져오는 데 실패했습니다.");
                 return;
             }
             
-            dealingTarget.AddCard(card);
+            
+            throwing = true;
+            card.MoveToTransform(dealingTarget.transform, 0.5f, () =>
+            {
+                dealingTarget.AddCard(card);
+                dealingCount--;
+                if (dealingCount <= 0)
+                {
+                    dealingFlag = false;
+                }
+                
+                throwing = false;
+            });
         }
 
         private void OnShuffle(InputAction.CallbackContext context)
@@ -108,21 +135,27 @@ namespace Actor
         // Deck이 Release되었을 때 호출되는 메서드
         private void OnDeckReleased(SelectExitEventArgs args)
         {
-            if (_currentDeck != null)
-            {
-                Debug.Log("Deck released and reference removed.");
-                _currentDeck = null;
-                // 추가적인 해제 로직이 필요하면 여기에 구현
-            }
+            if (_currentDeck == null) return;
+            
+            Debug.Log("Deck released and reference removed.");
+            _currentDeck = null;
+            // 추가적인 해제 로직이 필요하면 여기에 구현
         }
 
-        public IEnumerator DealToContainer(CardContainer target, int i)
+        public IEnumerator OrderDealing(CardContainer target, int i)
         {
+            if (target == null)
+            {
+                Debug.LogWarning("OrderDealing 호출 시 target이 null입니다.");
+                yield break;
+            }
+            
+            Debug.Log($"OrderDealing: {target.name}, {i}");
+            
             dealingFlag = true;
             dealingTarget = target;
             dealingCount = i;
             
-            // 카드를 Deck에서 뽑아서 actor에게 전달하는 로직
             yield return _dealingWaitUntil;
         }
     }

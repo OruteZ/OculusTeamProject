@@ -42,7 +42,7 @@ namespace Actor
                 return Check();
             }
             
-            int curRoundBet = BettingManager.Instance.GetCurrentBet();
+            int curRoundBet = BettingSystem.Instance.GetCurrentBet();
             int amount = curRoundBet - _curRoundBet;
             
             if(amount < 0) return false;
@@ -50,7 +50,7 @@ namespace Actor
             
             _curRoundBet += amount;
             money -= amount;
-            BettingManager.Instance.Bet(amount, _curRoundBet);
+            BettingSystem.Instance.Bet(amount, _curRoundBet);
             _bettingChipVisualizer.SetMoney(money);
             
             return true;
@@ -58,7 +58,7 @@ namespace Actor
         
         protected bool Callable()
         {
-            int curRoundBet = BettingManager.Instance.GetCurrentBet();
+            int curRoundBet = BettingSystem.Instance.GetCurrentBet();
             
             // call을 하기 위해서 필요한 금액
             int amount = curRoundBet - _curRoundBet;
@@ -76,7 +76,7 @@ namespace Actor
             
             _curRoundBet += amount;
             money -= amount;
-            BettingManager.Instance.Bet(amount, _curRoundBet);
+            BettingSystem.Instance.Bet(amount, _curRoundBet);
             _bettingChipVisualizer.SetMoney(money);
             
             return true;
@@ -95,7 +95,7 @@ namespace Actor
         }
         protected bool CanCheck()
         {
-            return BettingManager.Instance.CanCheck();     
+            return BettingSystem.Instance.CanCheck(this);     
         }
 
         /// <summary>

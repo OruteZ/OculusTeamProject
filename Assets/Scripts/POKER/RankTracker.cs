@@ -233,47 +233,47 @@ namespace Poker
         {
             if (IsRoyalFlush(cards))
             {
-                return new Rank(HandRank.ROYAL_FLUSH, cards, new List<Card>());
+                return new Rank(HandRank.RoyalFlush, cards, new List<Card>());
             }
 
             if (IsStraightFlush(cards, out Card highestCard))
             {
-                return new Rank(HandRank.STRAIGHT_FLUSH, cards, new List<Card> { highestCard });
+                return new Rank(HandRank.StraightFlush, cards, new List<Card> { highestCard });
             }
 
             if (IsFourOfAKind(cards, out Card quadCard, out Card fkKicker))
             {
-                return new Rank(HandRank.FOUR_OF_A_KIND, cards, new List<Card> { quadCard, fkKicker });
+                return new Rank(HandRank.FourOfAKind, cards, new List<Card> { quadCard, fkKicker });
             }
 
             if (IsFullHouse(cards, out Card threeCard, out Card pairCard))
             {
-                return new Rank(HandRank.FULL_HOUSE, cards, new List<Card> { threeCard, pairCard });
+                return new Rank(HandRank.FullHouse, cards, new List<Card> { threeCard, pairCard });
             }
 
             if (IsFlush(cards, out Suit suit))
             {
-                return new Rank(HandRank.FLUSH, cards, new List<Card>());
+                return new Rank(HandRank.Flush, cards, new List<Card>());
             }
 
             if (IsStraight(cards, out highestCard))
             {
-                return new Rank(HandRank.STRAIGHT, cards, new List<Card> { highestCard });
+                return new Rank(HandRank.Straight, cards, new List<Card> { highestCard });
             }
 
             if (IsThreeOfAKind(cards, out Card tkThreeCard, out Card firstKicker, out Card secondKicker))
             {
-                return new Rank(HandRank.THREE_OF_A_KIND, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
+                return new Rank(HandRank.ThreeOfAKind, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
             }
 
             if (IsTwoPair(cards, out List<Card> pairCards, out Card kicker))
             {
-                return new Rank(HandRank.TWO_PAIR, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
+                return new Rank(HandRank.TwoPair, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
             }
             
             if(IsOnePair(cards, out Card pair, out List<Card> kickers))
             {
-                return new Rank(HandRank.PAIR, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
+                return new Rank(HandRank.Pair, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
             }
 
             Card highest = Card.None();
@@ -285,7 +285,7 @@ namespace Poker
                 }
             }
          
-            return new Rank(HandRank.HIGH_CARD, cards, new List<Card> { highest });
+            return new Rank(HandRank.HighCard, cards, new List<Card> { highest });
         }
 
         /// <summary>
@@ -324,15 +324,15 @@ namespace Poker
 
     public enum HandRank
     {
-        HIGH_CARD,
-        PAIR,
-        TWO_PAIR,
-        THREE_OF_A_KIND,
-        STRAIGHT,
-        FLUSH,
-        FULL_HOUSE,
-        FOUR_OF_A_KIND,
-        STRAIGHT_FLUSH,
-        ROYAL_FLUSH
+        HighCard,
+        Pair,
+        TwoPair,
+        ThreeOfAKind,
+        Straight,
+        Flush,
+        FullHouse,
+        FourOfAKind,
+        StraightFlush,
+        RoyalFlush
     }
 }

@@ -18,11 +18,9 @@ public class BettingPlayer : BettingActor
     [SerializeField] private Text potText;
     [SerializeField] private Text warningText;
 
-    [SerializeField] private XRSimpleInteractable xrUIInteractable; // XR UI 버튼과 이벤트 처리용
-
     private bool _actionSelected;
-    private enum PlayerAction { NONE, CHECK_CALL, FOLD, RAISE }
-    private PlayerAction _selectedAction = PlayerAction.NONE;
+    private enum PlayerAction { None, CheckCall, Fold, Raise }
+    private PlayerAction _selectedAction = PlayerAction.None;
     private int _selectedRaiseAmount;
 
     private void CheckNull()
@@ -95,28 +93,27 @@ public class BettingPlayer : BettingActor
 
         // 초기 상태 설정
         _actionSelected = false;
-        _selectedAction = PlayerAction.NONE;
+        _selectedAction = PlayerAction.None;
         warningText.text = "";
 
+        //================================================================
         // 플레이어 입력 대기
-        while (_actionSelected == false)
-        {
-            yield return null;
-        }
+        while (_actionSelected == false) { yield return null; }
+        //================================================================
 
         // 액션 수행
         switch (_selectedAction)
         {
-            case PlayerAction.CHECK_CALL:
+            case PlayerAction.CheckCall:
                 HandleCheckOrCall();
                 break;
-            case PlayerAction.FOLD:
+            case PlayerAction.Fold:
                 Fold();
                 break;
-            case PlayerAction.RAISE:
+            case PlayerAction.Raise:
                 HandleRaise();
                 break;
-            case PlayerAction.NONE:
+            case PlayerAction.None:
             default:
                 throw new ArgumentOutOfRangeException();
         }
@@ -129,9 +126,9 @@ public class BettingPlayer : BettingActor
     {
         // 플레이어 정보 및 현재 베팅 상황 UI 반영
         moneyText.text = $"Money: {GetMoney()}";
-        int curBet = BettingManager.Instance.GetCurrentBet();
+        int curBet = BettingSystem.Instance.GetCurrentBet();
         currentBetText.text = $"Current Bet: {curBet}";
-        potText.text = $"Pot: {BettingManager.Instance.GetPot()}";
+        potText.text = $"Pot: {BettingSystem.Instance.GetPot()}";
 
         // Check/Call 버튼의 텍스트를 상황에 맞게 변경
         if (CanCheck())
@@ -155,7 +152,7 @@ public class BettingPlayer : BettingActor
         // Check/Call 가능한지 검사
         if (CanCheck() || Callable())
         {
-            _selectedAction = PlayerAction.CHECK_CALL;
+            _selectedAction = PlayerAction.CheckCall;
             _actionSelected = true;
         }
         else
@@ -167,7 +164,7 @@ public class BettingPlayer : BettingActor
     private void OnFoldPressed()
     {
         // 폴드는 언제나 가능(일반적으로)
-        _selectedAction = PlayerAction.FOLD;
+        _selectedAction = PlayerAction.Fold;
         _actionSelected = true;
     }
 
@@ -177,7 +174,7 @@ public class BettingPlayer : BettingActor
         int amount = _selectedRaiseAmount;
         if (amount > 0 && amount <= GetMoney())
         {
-            _selectedAction = PlayerAction.RAISE;
+            _selectedAction = PlayerAction.Raise;
             _actionSelected = true;
         }
         else
@@ -219,10 +216,7 @@ public class BettingPlayer : BettingActor
         {
             warningText.text = "Cannot raise that amount!";
             // 다시 액션 선택하도록 할 수도 있지만, 
-            // 여기서는 단순히 실패하면 턴 종료(또는 다시 액션 유도를 할 수 있음)
+            // todo : 여기서는 단순히 실패하면 턴 종료(또는 다시 액션 유도를 할 수 있음)
         }
     }
-
-    // 필요하다면 XR Input 관리 코드를 추가해서 VR Controller 버튼과 이벤트를 UI 버튼 클릭과 연동할 수 있다.
-    // 예: VR Controller의 Trigger가 Check/Call 버튼을 누른 것처럼 작동하도록 하는 XR 이벤트 핸들러.
 }

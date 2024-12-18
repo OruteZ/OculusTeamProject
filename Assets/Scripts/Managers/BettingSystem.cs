@@ -2,16 +2,17 @@
 
 using System;
 using System.Collections.Generic;
+using Actor;
 using Poker;
 using UnityEngine;
 
-public class BettingManager : MonoBehaviour
+public class BettingSystem : MonoBehaviour
 {
-    public static BettingManager Instance { get; private set; }
+    public static BettingSystem Instance { get; private set; }
 
     [SerializeField] private int _currentBet;
     [SerializeField] private int _totalPot;
-    [SerializeField] private List<Card> _communityCards;
+    [SerializeField] private BettingChipVisualizer _potVisualizer;
     
     private bool _lastActionWasRaise;
     
@@ -46,6 +47,7 @@ public class BettingManager : MonoBehaviour
         
         
         _totalPot += add;
+        _potVisualizer.SetMoney(_totalPot);
     }
 
     public void ResetRound()
@@ -53,14 +55,20 @@ public class BettingManager : MonoBehaviour
         _currentBet = 0;
     }
 
-    public bool CanCheck()
+    public bool CanCheck(BettingActor askingActor)
     {
         // 1. 현재 배팅이 0이라면 가능
         if (_currentBet == 0)
         {
             return true;
         }
-        // todo : 빅 블라인드 플레이어라면 가능
+        
+        Round curRound = TurnSystem.Instance.GetCurrentRound();
+        bool isBlindPlayer = TurnSystem.Instance.IsBlindPlayer(askingActor);
+        if (curRound == Round.PreFlop && isBlindPlayer)
+        {
+            return true;
+        }
 
         return false;
     }
@@ -70,23 +78,16 @@ public class BettingManager : MonoBehaviour
         return _currentBet;
     }
 
-    public List<Card> GetCommunityCards()
-    {
-        return _communityCards;
-    }
-
     public int GetPot()
     {
         return _totalPot;
     }
 
-    public bool LastActionWasRaise()
-    {
-        throw new NotImplementedException();
-    }
+    public bool WasLastActionRaise() => _lastActionWasRaise;
 
     public void ResetPot()
     {
         _totalPot = 0;
+        _potVisualizer.SetMoney(_totalPot);
     }
 }
