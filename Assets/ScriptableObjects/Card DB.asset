@@ -1,0 +1,228 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e05536a798f4760b4018f6dec38af6e, type: 3}
+  m_Name: Card DB
+  m_EditorClassIdentifier: 
+  cardObjEntries:
+  - suit: 0
+    number: 1
+    cardPrefab: {fileID: 1800843900581309504, guid: 679703409a311774b8d80a70bdb3c5f0,
+      type: 3}
+  - suit: 0
+    number: 2
+    cardPrefab: {fileID: 4704451784657835086, guid: cfde0700b4a427b4db69caa3c8219e91,
+      type: 3}
+  - suit: 0
+    number: 3
+    cardPrefab: {fileID: 851447088652125863, guid: b467d3cebc5aa57449369bc140fb286b,
+      type: 3}
+  - suit: 0
+    number: 4
+    cardPrefab: {fileID: 3222222539241308848, guid: 3f923eae1ba3a80448a6d84192cb30d0,
+      type: 3}
+  - suit: 0
+    number: 5
+    cardPrefab: {fileID: 486031839779561457, guid: f0d1fd58a1d13cd408c633e1cca1b325,
+      type: 3}
+  - suit: 0
+    number: 6
+    cardPrefab: {fileID: 2424780035722609411, guid: 52593db5c165193499188daa953108c3,
+      type: 3}
+  - suit: 0
+    number: 7
+    cardPrefab: {fileID: 8345925600134585776, guid: 988e364a191915646af72f1da374985f,
+      type: 3}
+  - suit: 0
+    number: 8
+    cardPrefab: {fileID: 9118515906719512506, guid: 254e95c1e2bdbe44d93454c0b74b86b2,
+      type: 3}
+  - suit: 0
+    number: 9
+    cardPrefab: {fileID: 9221402876072953124, guid: 79c43ce320d1f7e40aaffecef5da9787,
+      type: 3}
+  - suit: 0
+    number: 10
+    cardPrefab: {fileID: 4251624996254033595, guid: c8de120285c582048880e34fa0f003cc,
+      type: 3}
+  - suit: 0
+    number: 11
+    cardPrefab: {fileID: 8922008535558860947, guid: a7ab63e04c2a2a24bbdd3dd3bc3d6bc5,
+      type: 3}
+  - suit: 0
+    number: 12
+    cardPrefab: {fileID: 6824222627732136798, guid: 26d53119059cf134282f7ddfbe8045e0,
+      type: 3}
+  - suit: 0
+    number: 13
+    cardPrefab: {fileID: 6093760270803575120, guid: 1e3022158b4c78a4f83fbbabbadddd63,
+      type: 3}
+  - suit: 1
+    number: 1
+    cardPrefab: {fileID: 7620486739987026279, guid: c679cd7afce6f434eb05e1596f39fed5,
+      type: 3}
+  - suit: 1
+    number: 2
+    cardPrefab: {fileID: 1120549061903663898, guid: 674ed2fea85f33a49836148928ba1154,
+      type: 3}
+  - suit: 1
+    number: 3
+    cardPrefab: {fileID: 4576124145530875670, guid: a09864f53ed4dcc4b9eace2f450dda7f,
+      type: 3}
+  - suit: 1
+    number: 4
+    cardPrefab: {fileID: 6879098107901988219, guid: 030fc5c67ae33e54e82fad6aeb7b660d,
+      type: 3}
+  - suit: 1
+    number: 5
+    cardPrefab: {fileID: 1055205628213336658, guid: d37f975225f0b1e4aa142781a6550891,
+      type: 3}
+  - suit: 1
+    number: 6
+    cardPrefab: {fileID: 1416634413611877280, guid: 04f9f7dda3c94d94587aadc67cd044ab,
+      type: 3}
+  - suit: 1
+    number: 7
+    cardPrefab: {fileID: 3137997925796175148, guid: 630994d3dbeedd548804b4397e0121ee,
+      type: 3}
+  - suit: 1
+    number: 8
+    cardPrefab: {fileID: 6739812281180741413, guid: 13bab6cf6898c5f44ba88e68a8147ed9,
+      type: 3}
+  - suit: 1
+    number: 9
+    cardPrefab: {fileID: 3374926157278016671, guid: 72728907167eaad42b36ffcf079288dc,
+      type: 3}
+  - suit: 1
+    number: 10
+    cardPrefab: {fileID: 4638783911462552403, guid: f86c01c6bb746d3498debde1376d236d,
+      type: 3}
+  - suit: 1
+    number: 11
+    cardPrefab: {fileID: 748800313423445420, guid: 88eb625c84715d7469f5e82c2bb12092,
+      type: 3}
+  - suit: 1
+    number: 12
+    cardPrefab: {fileID: 8816023348059597911, guid: 92bb063ac95cb6941a719919d53a2a60,
+      type: 3}
+  - suit: 1
+    number: 13
+    cardPrefab: {fileID: 7515482420652955562, guid: 6a6867ed22fcb6b44b1cc3ad403512ed,
+      type: 3}
+  - suit: 2
+    number: 1
+    cardPrefab: {fileID: 9155915166557002907, guid: 16a882096da0cec4bac866890d5f6dc8,
+      type: 3}
+  - suit: 2
+    number: 2
+    cardPrefab: {fileID: 1322482730301465515, guid: 3fe68bb18a5b61e4db5f405c8fa66216,
+      type: 3}
+  - suit: 2
+    number: 3
+    cardPrefab: {fileID: 6290163690470343772, guid: 10a565b1b45533840b28cfb827ad03b1,
+      type: 3}
+  - suit: 2
+    number: 4
+    cardPrefab: {fileID: 7767169776730992795, guid: 7b96c87095a30f748b2f3df8e56d299e,
+      type: 3}
+  - suit: 2
+    number: 5
+    cardPrefab: {fileID: 6351043680984590875, guid: 6c0e76079043d74449d82b62b150ea9d,
+      type: 3}
+  - suit: 2
+    number: 6
+    cardPrefab: {fileID: 8656600534359927316, guid: a5613af58a2f4b745af6b65247c17e79,
+      type: 3}
+  - suit: 2
+    number: 7
+    cardPrefab: {fileID: 4246746346028043691, guid: 9491c3a51fdb0b948a1e2def4f2e2acf,
+      type: 3}
+  - suit: 2
+    number: 8
+    cardPrefab: {fileID: 253845043095326236, guid: 3adffe9c09fb0fa40b560250212d2908,
+      type: 3}
+  - suit: 2
+    number: 9
+    cardPrefab: {fileID: 8932856687457826713, guid: 05d166ab5e1b2fb44a195fcdd48675a1,
+      type: 3}
+  - suit: 2
+    number: 10
+    cardPrefab: {fileID: 4662285324296633786, guid: 846604fff87752343af3f2eef3afd557,
+      type: 3}
+  - suit: 2
+    number: 11
+    cardPrefab: {fileID: 1293958831448521326, guid: afd6f57fbe180314395e661ed15486d4,
+      type: 3}
+  - suit: 2
+    number: 12
+    cardPrefab: {fileID: 3346957821209517961, guid: fa43eb059be6c54408f6e6f16a8afb61,
+      type: 3}
+  - suit: 2
+    number: 13
+    cardPrefab: {fileID: 366556104620551460, guid: fe5c039dbc103d04d94cd2e501398e92,
+      type: 3}
+  - suit: 3
+    number: 1
+    cardPrefab: {fileID: 4107913866523956425, guid: 498183e9ce21c76439760d88d2f7369b,
+      type: 3}
+  - suit: 3
+    number: 2
+    cardPrefab: {fileID: 4699265818613305834, guid: c5ff39769812b0f4bb466f578f039791,
+      type: 3}
+  - suit: 3
+    number: 3
+    cardPrefab: {fileID: 3935840920983308708, guid: 721320ee6224dd643940f7eeb4784fd3,
+      type: 3}
+  - suit: 3
+    number: 4
+    cardPrefab: {fileID: 1213049862783527719, guid: ef0ad9f25bb58654cb8b641462b2e2c1,
+      type: 3}
+  - suit: 3
+    number: 5
+    cardPrefab: {fileID: 7589586389822857447, guid: 3c3300169aa2a194c9fc9608f0580221,
+      type: 3}
+  - suit: 3
+    number: 6
+    cardPrefab: {fileID: 2957822907216399208, guid: 19731a620b438514cb580f89f729c93e,
+      type: 3}
+  - suit: 3
+    number: 7
+    cardPrefab: {fileID: 9043505585276897684, guid: 341d167f50b385c40ad50d5a8182eaf7,
+      type: 3}
+  - suit: 3
+    number: 8
+    cardPrefab: {fileID: 4193939009279460354, guid: c6933338e7a551d459dc405575cf1288,
+      type: 3}
+  - suit: 3
+    number: 9
+    cardPrefab: {fileID: 3631630423275414307, guid: dba5e0aa1617d77479ca7f2c3cc654b0,
+      type: 3}
+  - suit: 3
+    number: 10
+    cardPrefab: {fileID: 8909154684826227476, guid: 4ca9eb1c1306a2d4799af2013e003dea,
+      type: 3}
+  - suit: 3
+    number: 11
+    cardPrefab: {fileID: 8678477582111002781, guid: c5ef11b77f5755b43a1ae968bf832cb3,
+      type: 3}
+  - suit: 3
+    number: 12
+    cardPrefab: {fileID: 1337235916737730652, guid: 5e0192ed4d5c8fd47b748d60fc3932fb,
+      type: 3}
+  - suit: 3
+    number: 13
+    cardPrefab: {fileID: 5193355229928930190, guid: b8a56ea7f73d3224c834f2d1cd6eea30,
+      type: 3}
+  cardPrefabPath:
+  - Spade
+  - Heart
+  - Diamond
+  - Club

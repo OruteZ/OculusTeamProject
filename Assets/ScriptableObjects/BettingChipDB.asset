@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19a1c20404a9f90478f2984c5ff0f841, type: 3}
+  m_Name: BettingChipDB
+  m_EditorClassIdentifier: 
+  _bettingChips:
+  - _value: 50
+    _chipPrefab: {fileID: 8563654270611086648, guid: b601630c0d218a641b6705996525e2dd,
+      type: 3}
+  - _value: 10
+    _chipPrefab: {fileID: 1215985896882317714, guid: 30ee43d4b6ecf08409a363c115eff133,
+      type: 3}
+  - _value: 5
+    _chipPrefab: {fileID: 4957065473226686671, guid: e1ae2fe72c606dd4c952e57d1a4a9508,
+      type: 3}
+  - _value: 1
+    _chipPrefab: {fileID: 7085839119149727733, guid: e1d6ca519cda25b47be1c9c392076934,
+      type: 3}
