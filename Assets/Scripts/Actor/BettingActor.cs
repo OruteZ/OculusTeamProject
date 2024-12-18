@@ -31,7 +31,7 @@ namespace Actor
         private BettingChipVisualizer _bettingChipVisualizer;
         
         [SerializeField]
-        private List<Card> _cards;
+        private CardContainer _cards;
         
         
         protected bool Call()
@@ -51,6 +51,7 @@ namespace Actor
             _curRoundBet += amount;
             money -= amount;
             BettingManager.Instance.Bet(amount, _curRoundBet);
+            _bettingChipVisualizer.SetMoney(money);
             
             return true;
         }
@@ -58,22 +59,25 @@ namespace Actor
         protected bool Callable()
         {
             int curRoundBet = BettingManager.Instance.GetCurrentBet();
+            
+            // call을 하기 위해서 필요한 금액
             int amount = curRoundBet - _curRoundBet;
             
-            if(amount < 0) return false;
-            if (amount < money) return false;
+            if (amount < 0) return false;
+            if (money < amount) return false;
             
             return true;
         }
         
         protected bool Raise(int amount)
         {
-            if(amount < 0) return false;
+            if (amount < 0) return false;
             if (amount < money) return false;
             
             _curRoundBet += amount;
             money -= amount;
             BettingManager.Instance.Bet(amount, _curRoundBet);
+            _bettingChipVisualizer.SetMoney(money);
             
             return true;
         }
@@ -136,11 +140,17 @@ namespace Actor
             return _isAllIn;
         }
         
-        public List<Card> GetCards()
-        {
-            return new List<Card>(_cards);
-        }
-        
         #endregion
+
+        public void AddMoney(int getPot)
+        {
+            money += getPot;
+            _bettingChipVisualizer.SetMoney(money);
+        }
+
+        public CardContainer GetContainer()
+        {
+            return _cards;
+        }
     }
 }

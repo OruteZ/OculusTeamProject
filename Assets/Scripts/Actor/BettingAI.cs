@@ -91,7 +91,7 @@ namespace Actor
             try
             {
                 UpdatePosition();
-                var hand = GetCards();
+                var hand = GetContainer().GetCards();
                 var communityCards = BettingManager.Instance.GetCommunityCards();
 
                 // 핸드 유효성 검사

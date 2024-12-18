@@ -13,6 +13,8 @@ public class BettingManager : MonoBehaviour
     [SerializeField] private int _totalPot;
     [SerializeField] private List<Card> _communityCards;
     
+    private bool _lastActionWasRaise;
+    
     private void Awake()
     {
         if (Instance != null)
@@ -36,7 +38,13 @@ public class BettingManager : MonoBehaviour
     /// <param name="amount">현재 배팅금엑의 수 입니다.</param>
     public void Bet(int add, int amount)
     {
-        _currentBet = Mathf.Max(_currentBet, amount);
+        _lastActionWasRaise = amount > _currentBet;
+        if(_lastActionWasRaise)
+        {
+            _currentBet = amount;
+        }
+        
+        
         _totalPot += add;
     }
 
@@ -65,5 +73,20 @@ public class BettingManager : MonoBehaviour
     public List<Card> GetCommunityCards()
     {
         return _communityCards;
+    }
+
+    public int GetPot()
+    {
+        return _totalPot;
+    }
+
+    public bool LastActionWasRaise()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void ResetPot()
+    {
+        _totalPot = 0;
     }
 }

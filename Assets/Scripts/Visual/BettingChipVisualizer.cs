@@ -18,7 +18,7 @@ public class BettingChipVisualizer : MonoBehaviour
 
     // Reload 메서드를 public으로 변경하고, 파라미터 제거
     [ContextMenu("Reload")]
-    public void Reload()
+    private void Reload()
     {
         foreach (GameObject chip in bettingChipObjects)
         {
@@ -67,6 +67,12 @@ public class BettingChipVisualizer : MonoBehaviour
         }
 
         bettingChipObjects.AddRange(newChips);
+    }
+    
+    public void SetMoney(int money)
+    {
+        totalMoney = money;
+        Reload();
     }
 
     private Dictionary<int, int> GetChipCount(int money)

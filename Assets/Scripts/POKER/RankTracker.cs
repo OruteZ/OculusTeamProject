@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -245,12 +246,12 @@ namespace Poker
                 return new Rank(HandRank.FOUR_OF_A_KIND, cards, new List<Card> { quadCard, fkKicker });
             }
 
-            if (IsFullHouse(cards, out var threeCard, out var pairCard))
+            if (IsFullHouse(cards, out Card threeCard, out Card pairCard))
             {
                 return new Rank(HandRank.FULL_HOUSE, cards, new List<Card> { threeCard, pairCard });
             }
 
-            if (IsFlush(cards, out var suit))
+            if (IsFlush(cards, out Suit suit))
             {
                 return new Rank(HandRank.FLUSH, cards, new List<Card>());
             }
@@ -260,23 +261,23 @@ namespace Poker
                 return new Rank(HandRank.STRAIGHT, cards, new List<Card> { highestCard });
             }
 
-            if (IsThreeOfAKind(cards, out var tkThreeCard, out var firstKicker, out var secondKicker))
+            if (IsThreeOfAKind(cards, out Card tkThreeCard, out Card firstKicker, out Card secondKicker))
             {
                 return new Rank(HandRank.THREE_OF_A_KIND, cards, new List<Card> { tkThreeCard, firstKicker, secondKicker });
             }
 
-            if (IsTwoPair(cards, out var pairCards, out var kicker))
+            if (IsTwoPair(cards, out List<Card> pairCards, out Card kicker))
             {
                 return new Rank(HandRank.TWO_PAIR, cards, new List<Card> { pairCards[0], pairCards[1], kicker });
             }
             
-            if(IsOnePair(cards, out var pair, out var kickers))
+            if(IsOnePair(cards, out Card pair, out List<Card> kickers))
             {
                 return new Rank(HandRank.PAIR, cards, new List<Card> { pair, kickers[0], kickers[1], kickers[2] });
             }
 
             Card highest = Card.None();
-            foreach (var card in cards)
+            foreach (Card card in cards)
             {
                 if (card.number > highest.number)
                 {
@@ -290,17 +291,21 @@ namespace Poker
         /// <summary>
         /// 해당 카드 내에서 조합 가능한 가장 높은 Rank를 반환합니다.
         /// </summary>
-        /// <param name="cards"></param>
+        /// <param name="hands"></param>
+        /// <param name="communityCards"></param>
         /// <returns></returns>
         /// <exception cref="Exception">카드의 개수가 5개 미만일 경우 발생합니다.</exception>
-        public static Rank GetPossibleMaxRank(in List<Card> cards)
+        public static Rank GetPossibleMaxRank(in List<Card> hands, in List<Card> communityCards = null)
         {
+            List<Card> cards = new (hands); 
+            if (communityCards != null) cards.AddRange(communityCards);
+
             if (cards.Count < 5)
             {
-                throw new System.Exception("Invalid number of cards. Expected at least 5, got " + cards.Count);
+                throw new Exception("Invalid number of cards. Expected 5 or more, got " + cards.Count);
             }
 
-            var combinations = Combinatorics.GetCombinations(cards, 5);
+            List<List<Card>> combinations = Combinatorics.GetCombinations(hands, 5);
             Rank bestRank = null;
 
             foreach (List<Card> combination in combinations)

@@ -30,6 +30,7 @@ namespace Poker
         LENGTH = 4,
     }
 
+    [System.Serializable]
     public struct Card
     {
         public Number number;
