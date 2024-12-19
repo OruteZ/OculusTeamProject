@@ -7,74 +7,11 @@ using UnityEngine;
 
 namespace Actor
 {
-    /// 포커 AI 클래스
-    /// 실제 베팅 결정을 내리는 AI 구현
     public class BettingAI : BettingActor
     {
-
-        // 가능한 포커 핸드 타입
-        private enum HandType
-        {
-            Incomplete,
-            HighCard,
-            Pair,
-            TwoPair,
-            ThreeOfAKind,
-            Straight,
-            Flush,
-            FullHouse,
-            FourOfAKind,
-            StraightFlush,
-            Draw
-        }
+        [SerializeField]
+        private float currentHandStrength;
         
-        // 포지션
-        private enum Position
-        {
-            Early,   // 초기 포지션 (불리한 위치)
-            Middle,  // 중간 포지션
-            Late    // 후반 포지션 (유리한 위치)
-        }
-
-        // AI 상태 변수들
-        private Round _currentStage = Round.PreFlop;            // 현재 게임 단계
-        private float suspicionLevel = 0f;                      // AI의 의심 수준 (블러핑 감지용)
-        private const float MAX_SUSPICION = 100f;               // 최대 의심 수준
-        private Position currentPosition;                       // 현재 포지션
-
-        // 초기화
-        private void Start()
-        {
-            money = 1000; // 임시 시작 금액
-            
-            // 게임 시작 시 포지션 설정
-            UpdatePosition();
-        }
-
-        // 포지션 업데이트 
-        private void UpdatePosition()
-        {
-            try
-            {
-                int playerCount = GetPlayerCount();
-                int myPosition = GetMyPosition();
-
-                // 플레이어 수에 따라 포지션 결정
-                if (myPosition < playerCount / 3)
-                    currentPosition = Position.Early;
-                else if (myPosition < (playerCount * 2) / 3)
-                    currentPosition = Position.Middle;
-                else
-                    currentPosition = Position.Late;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"Error updating position: {e.Message}");
-                currentPosition = Position.Early;  // 에러 시 기본값
-            }
-        }
-        
-        // AI의 플레이 로직
         public override IEnumerator Play()
         {
             Debug.Log($"Player Turn : {gameObject.name}");
@@ -82,13 +19,9 @@ namespace Actor
 
             try
             {
-                UpdatePosition();
-                List<Card> hand 
-                    = GetContainer().GetCards();
-                List<Card> communityCards 
-                    = TurnSystem.Instance.GetCommunityCards();
+                List<Card> hand = GetContainer().GetCards();
+                List<Card> communityCards = TurnSystem.Instance.GetCommunityCards();
 
-                // 핸드 유효성 검사
                 if (hand == null || hand.Count == 0)
                 {
                     Debug.LogError("Invalid hand");
@@ -96,428 +29,230 @@ namespace Actor
                     yield break;
                 }
                 
-                 // 핸드 강도 평가
-                (float strength, HandType type)
-                    handInfo = EvaluateHandStrength(hand, communityCards);
+                currentHandStrength = EvaluateHandStrength(hand, communityCards);
 
-                 // 베팅 결정
-                 int decision = CalculateBettingDecision(
-                     hand,
-                     communityCards,
-                     GetCurRoundBet(),
-                     GetMoney(),
-                     BettingSystem.Instance.GetCurrentBet(),
-                    handInfo.strength,
-                    handInfo.type
+                int decision = CalculateBettingDecision(
+                    GetCurRoundBet(), 
+                    GetMoney(), 
+                    BettingSystem.Instance.GetCurrentBet(), 
+                    currentHandStrength
                 );
-                
-                // 결정 실행
                 ExecuteDecision(decision);
             }
             catch (Exception e)
             {
                 Debug.LogError($"Error during play: {e.Message}");
-                Fold(); // 에러 발생시 폴드
+                Fold(); 
             }
         }
 
-         // 핸드 강도 평가 메서드
-        private static (float strength, HandType type) 
-            EvaluateHandStrength(List<Card> hand, List<Card> communityCards)
+        private static float EvaluateHandStrength(IReadOnlyCollection<Card> hand, List<Card> communityCards)
         {
             if (hand == null || communityCards == null)
-                return (0f, HandType.Incomplete);
+                return (0.0f);
 
             List<Card> allCards = new List<Card>(hand);
             allCards.AddRange(communityCards);
+            
+            float strength = CalculateHandStrength(hand, communityCards);
 
-            HandType handType = DetermineHandType(allCards);
-            float strength = CalculateHandStrength(hand, communityCards, handType);
-
-            return (strength, handType);
+            return (strength);
         }
-        
-        // 베팅 결정 실행 메서드
+
         private void ExecuteDecision(int decision)
         {
             try
             {
-                switch (decision)
+                if (decision > 0)
                 {
-                    case > 0:
-                        // 레이즈 결정
-                        Raise(decision);
-                        Debug.Log($"AI Raised {decision}");
-                        suspicionLevel += 5f;
-                        break;
-                    case 0 when CanCheck():
-                        // 체크 가능할 때
-                        Check();
-                        Debug.Log("AI Checked");
-                        break;
-                    case 0:
-                        // 체크 불가능할 때 콜
-                        Call();
-                        Debug.Log("AI Called");
-                        suspicionLevel += 2f;
-                        break;
-                    default:
-                        // 폴드 결정
-                        Debug.Log("AI Folded");
-                        Fold();
-                        break;
+                    Raise(decision);
+                    Debug.Log($"AI Raised {decision}");
                 }
-
-                // 의심도 관리
-                suspicionLevel = Mathf.Clamp(suspicionLevel, 0f, MAX_SUSPICION);
+                else if (decision == 0 && CanCheck())
+                {
+                    Check();
+                    Debug.Log("AI Checked");
+                }
+                else if (decision == 0)
+                {
+                    Call();
+                    Debug.Log("AI Called");
+                }
+                else
+                {
+                    Debug.Log("AI Folded");
+                    Fold();
+                }
             }
             catch (Exception e)
             {
                 Debug.LogError($"Error executing decision: {e.Message}");
-                Fold(); // 에러 발생시 폴드
+                Fold();
             }
         }
 
-        // 베팅 액션 계산 메서드
-        private int CalculateBettingDecision(
-            List<Card> hand,
-            List<Card> communityCards,
+        private static int CalculateBettingDecision(
             int currentBettingAmount,
             int myMoney,
             int currentPot,
-            float handStrength,
-            HandType handType)
-        {
-            if (myMoney <= 0) return -1; // 돈이 없으면 폴드
+            float handStrength
+            ) {
+            if (myMoney <= 0) return -1;
 
-            Round stage = DetermineGameStage(communityCards);
-            
-            // 팟 오즈 계산 (수익률)
-            float potOdds = currentBettingAmount > 0 ?
-                (float)currentBettingAmount / (currentPot + currentBettingAmount) : 0f;
-            
-            // 최소 베팅액 계산 (현재 베팅액의 2배 또는 보유 금액 중 작은 값)
-            int minBet = Mathf.Min(myMoney, currentBettingAmount * 2);
+            // 기본 베이스 벳 계산
+            int baseBet = (currentBettingAmount > 0 ? currentBettingAmount : 50);
+            int smallBet = Mathf.Min(myMoney, baseBet);                // 최소기준 레이즈 혹은 콜
+            int mediumRaise = Mathf.Min(myMoney, baseBet * 2);         // 중간 정도 레이즈
+            int bigRaise = Mathf.Min(myMoney, baseBet * 3);            // 크게 레이즈
 
-            // 블러핑 확률 계산
-            float bluffChance = CalculateBluffChance(stage, currentPosition, suspicionLevel);
+            // 공격적 로직:
+            // handStrength > 0.7 : 매우 강한 핸드 -> 크게 레이즈 (3배)
+            // handStrength > 0.5 : 꽤 좋은 핸드 -> 중간 레이즈 (2배)
+            // handStrength > 0.3 : 나쁘지 않음 -> 최소한 레이즈(기본 베팅액 정도)
+            // handStrength > 0.1 : 약간 약하지만 완전 폴드는 아님 -> 콜 또는 소액 베팅(0이면 체크)
+            // 그 외 : 폴드
 
-            // 랜덤 요소 추가
-            if (UnityEngine.Random.value < bluffChance)
+            return handStrength switch
             {
-                return CalculateBluffAmount(minBet, myMoney, stage);
-            }
-            
-            // 게임 단계별 결정
-            return stage switch
-            {
-                Round.PreFlop => HandlePreFlopDecision(hand, currentBettingAmount, minBet),
-                Round.Flop => HandleFlopDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
-                Round.Turn => HandleTurnDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
-                Round.River => HandleRiverDecision(handStrength, handType, potOdds, currentBettingAmount, minBet),
-                _ => 0
+                > 0.7f => bigRaise,
+                > 0.5f => mediumRaise,
+                > 0.3f => smallBet,
+                > 0.1f => (currentBettingAmount > 0) ? 0 : Mathf.Min(myMoney, 50),
+                _ => -1
             };
-        }
-
-        // 블러핑 확률 계산 메서드
-        private float CalculateBluffChance(Round stage, Position position, float suspicionLevel)
-        {
-            float baseChance = 0.1f; // 기본 블러핑 확률
-
-            // 게임 스테이지에 따른 조정
-            baseChance += stage switch
-            {
-                Round.PreFlop => 0.05f,
-                Round.Flop => 0.1f,
-                Round.Turn => 0.15f,
-                Round.River => 0.2f,
-                _ => 0f
-            };
-
-            // 포지션에 따른 조정
-            baseChance += position switch
-            {
-                Position.Late => 0.1f,   // 레이트 포지션에서 블러핑 확률 증가
-                Position.Middle => 0.05f, // 미들 포지션에서 약간 증가
-                _ => 0f                  // 얼리 포지션에서는 증가 없음
-            };
-
-            // 의심도에 따른 조정
-            baseChance -= suspicionLevel / MAX_SUSPICION * 0.2f;
-
-            return Mathf.Clamp(baseChance, 0.05f, 0.3f);
-        }
-
-        // 블러프 베팅액 계산 메서드
-        private int CalculateBluffAmount(int minBet, int myMoney, Round stage)
-        {
-            // 게임 단계별 블러프 배수 설정
-            float multiplier = stage switch
-            {
-                Round.PreFlop => 2f,
-                Round.Flop => 2.5f,
-                Round.Turn => 3f,
-                Round.River => 3.5f,
-                _ => 2f
-            };
-
-            return Mathf.Min((int)(minBet * multiplier), myMoney);
         }
         
-        private int HandlePreFlopDecision(List<Card> hand, int currentBet, int minBet)
+        private static float CalIncompleteCardsStrength(List<Card> cards)
         {
-            Card card1 = hand[0];
-            Card card2 = hand[1];
-            bool isPaired = card1.number == card2.number;
-            bool isSuited = card1.suit == card2.suit;
+            if (cards == null || cards.Count == 0)
+                return 0.0f;
 
-            // 프리미엄 핸드 (AA, KK, QQ, JJ, AK)
-            if (isPaired && (int)card1.number >= (int)Number.J ||
-                (card1.number == Number.A && card2.number == Number.K))
+            cards.Sort((a, b) => a.number.GetInt().CompareTo(b.number.GetInt()));
+            int count = cards.Count;
+            int highestCardValue = cards[^1].number.GetInt();
+
+            // 숫자별로 그룹화(페어, 트리플 확인)
+            var numberGroups = cards
+                .GroupBy(c => c.number.GetInt())
+                .Select(g => new { Number = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .ThenByDescending(g => g.Number)
+                .ToList();
+
+            int topGroupCount = numberGroups[0].Count;
+            int topGroupNumber = numberGroups[0].Number;
+
+            // 기본 Strength 결정 (Pair/ThreeOfAKind/HighCard)
+            float baseStrength;
+            if (topGroupCount == 3)
             {
-                return minBet * 3;  // 강한 레이즈
+                // ThreeOfAKind 유사
+                baseStrength = 0.6f + (topGroupNumber / 100.0f);
+            }
+            else if (topGroupCount == 2)
+            {
+                // Pair 유사
+                baseStrength = 0.2f + (topGroupNumber / 100.0f);
+            }
+            else
+            {
+                // HighCard 유사
+                baseStrength = (highestCardValue / 100.0f);
             }
 
-            // 중간 강도 페어 (TT, 99, 88)
-            if (isPaired && (int)card1.number >= (int)Number.VIII)
+            // 플러시 드로우 가능성 확인
+            // 같은 suit를 가진 카드 수
+            var suitGroups = cards
+                .GroupBy(c => c.suit)
+                .Select(g => new { Suit = g.Key, Count = g.Count() })
+                .OrderByDescending(g => g.Count)
+                .ToList();
+
+            int maxSuitCount = suitGroups[0].Count;
+            // 플러시 드로우 보너스
+            float flushBonus = 0.0f;
+            if (maxSuitCount == 4)
             {
-                return currentPosition == Position.Late ? minBet * 2 : currentBet;
+                // 거의 플러시 완성에 가까운 상태 (추가카드 1장만 맞으면 플러시)
+                flushBonus = 0.15f;
+            }
+            else if (maxSuitCount == 3 && count < 5)
+            {
+                // 3장 일치이면 아직 2장의 카드 여유 -> 어느 정도 플러시 가능성
+                flushBonus = 0.07f;
             }
 
-            // 강한 에이스, 킹 (AQ, AJ, KQ, KJ)
-            if ((card1.number == Number.A || card1.number == Number.K) &&
-                ((int)card2.number >= (int)Number.J))
+            // 스트레이트 드로우 가능성 확인
+            // 연속되는 카드의 최대 길이를 찾는다.
+            int straightLength = GetLongestConsecutiveRun(cards.Select(c => c.number.GetInt()).ToArray());
+
+            float straightBonus = 0.0f;
+            if (straightLength >= 4)
             {
-                return currentPosition == Position.Late ? minBet * 2 : currentBet;
+                // 하나만 더 받으면 스트레이트가 될 수 있는 강력한 드로우
+                straightBonus = 0.15f;
+            }
+            else if (straightLength == 3 && count < 5)
+            {
+                // 두장 더 받으면 스트레이트 가능성이 있는 약한 드로우
+                straightBonus = 0.07f;
             }
 
-            // 약한 핸드
-            return currentPosition == Position.Late && IsPlayableHand(card1, card2) ? currentBet : -1;
-        }
+            // 최종 Strength
+            float finalStrength = baseStrength + flushBonus + straightBonus;
+            // 1.0f 초과하지 않도록 제한 (여기서는 단순히 Min사용)
+            finalStrength = Math.Min(finalStrength, 1.0f);
 
-        private static int HandleFlopDecision(float handStrength, HandType handType, float potOdds, int currentBet, int minBet)
+            return finalStrength;
+            }
+
+        private static int GetLongestConsecutiveRun(IReadOnlyList<int> sortedValues)
         {
-            switch (handType)
+            if (sortedValues.Count == 0) return 0;
+
+            int longest = 1;
+            int current = 1;
+
+            for (int i = 1; i < sortedValues.Count; i++)
             {
-                case HandType.FullHouse:
-                case HandType.Flush:
-                case HandType.Straight:
-                    return minBet * 3;  // 적극적 레이즈
-
-                case HandType.ThreeOfAKind:
-                case HandType.TwoPair:
-                    return minBet * 2;  // 밸류벳
-
-                case HandType.Draw:
-                    if (handStrength > potOdds + 0.2f)
-                        return currentBet;  // 세미블러프
-                    return 0;  // 체크/콜
-
-                default:
-                    return handStrength > potOdds ? 0 : -1;  // 약한 핸드는 체크 또는 폴드
-            }
-        }
-
-        private static int HandleTurnDecision(float handStrength, HandType handType, float potOdds, int currentBet, int minBet)
-        {
-            switch (handType)
-            {
-                case HandType.FullHouse:
-                case HandType.Flush:
-                case HandType.Straight:
-                    return minBet * 3;  // 강한 레이즈
-
-                case HandType.ThreeOfAKind:
-                case HandType.TwoPair:
-                    return minBet * 2;  // 강한 밸류벳
-
-                case HandType.Draw:
-                    if (handStrength > potOdds + 0.3f)
-                        return currentBet;  // 높은 드로우 확률시 베팅
-                    return 0;  // 체크/콜
-
-                default:
-                    return -1;  // 약한 핸드는 폴드
-            }
-        }
-
-        private static int HandleRiverDecision(float handStrength, HandType handType, float potOdds, int currentBet, int minBet)
-        {
-            switch (handType)
-            {
-                case HandType.FullHouse:
-                case HandType.Flush:
-                case HandType.Straight:
-                    return minBet * 3;  // 최대 밸류벳
-
-                case HandType.ThreeOfAKind:
-                case HandType.TwoPair:
-                    return minBet * 2;  // 강한 밸류벳
-
-                case HandType.Draw:
-                    return UnityEngine.Random.value > 0.7f ? minBet : -1;  // 30% 확률로 블러프
-
-                default:
-                    return -1;  // 약한 핸드는 폴드
-            }
-        }
-
-        private static HandType DetermineHandType(List<Card> cards)
-        {
-            if (cards.Count < 5) return HandType.Incomplete;
-
-            // 카드를 랭크와 슈트별로 그룹화
-            var rankGroups = cards.GroupBy(c => c.number).OrderByDescending(g => g.Count());
-            var suitGroups = cards.GroupBy(c => c.suit);
-
-            // 스트레이트 플러시 체크
-            if (HasStraightFlush(cards)) return HandType.StraightFlush;
-
-            // 포카드 체크
-            if (rankGroups.Any(g => g.Count() == 4)) return HandType.FourOfAKind;
-
-            // 풀하우스 체크
-            if (rankGroups.Any(g => g.Count() == 3) && rankGroups.Any(g => g.Count() == 2))
-                return HandType.FullHouse;
-
-            // 플러시 체크
-            if (suitGroups.Any(g => g.Count() >= 5)) return HandType.Flush;
-
-            // 스트레이트 체크
-            if (HasStraight(cards)) return HandType.Straight;
-
-            // 트리플 체크
-            if (rankGroups.Any(g => g.Count() == 3)) return HandType.ThreeOfAKind;
-
-            // 투페어 체크
-            if (rankGroups.Count(g => g.Count() == 2) == 2) return HandType.TwoPair;
-
-            // 원페어 체크
-            if (rankGroups.Any(g => g.Count() == 2)) return HandType.Pair;
-
-            // 드로우 체크
-            if (IsDrawing(cards)) return HandType.Draw;
-
-            return HandType.HighCard;
-        }
-
-        private static bool HasStraightFlush(List<Card> cards)
-        {
-            foreach (var suitGroup in cards.GroupBy(c => c.suit))
-            {
-                if (suitGroup.Count() >= 5 && HasStraight(suitGroup.ToList()))
-                    return true;
-            }
-            return false;
-        }
-
-        private static bool HasStraight(List<Card> cards)
-        {
-            var orderedRanks = cards.Select(c => (int)c.number).Distinct().OrderBy(r => r).ToList();
-
-            for (int i = 0; i <= orderedRanks.Count - 5; i++)
-            {
-                if (orderedRanks[i + 4] - orderedRanks[i] == 4)
-                    return true;
-            }
-
-            // Ace-low 스트레이트 체크 (A,2,3,4,5)
-            if (orderedRanks.Contains(14)) // Ace
-            {
-                var lowStraight = new[] { 2, 3, 4, 5 };
-                if (lowStraight.All(r => orderedRanks.Contains(r)))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private static bool IsDrawing(List<Card> cards)
-        {
-            // 플러시 드로우
-            bool hasFlushDraw = cards.GroupBy(c => c.suit).Any(g => g.Count() == 4);
-
-            // 스트레이트 드로우
-            var orderedRanks = cards.Select(c => (int)c.number).Distinct().OrderBy(r => r).ToList();
-            bool hasStraightDraw = false;
-
-            for (int i = 0; i < orderedRanks.Count - 3; i++)
-            {
-                if (orderedRanks[i + 3] - orderedRanks[i] == 3)
+                if (sortedValues[i] == sortedValues[i - 1] + 1)
                 {
-                    hasStraightDraw = true;
-                    break;
+                    current++;
+                }
+                else if (sortedValues[i] == sortedValues[i - 1])
+                {
+                    // 같은 값은 무시 (A, A 처럼) 
+                    // 단순히 계속 진행하지만 current 카운트에는 포함하지 않음
+                    // 여기서는 아무 처리 없이 continue
+                }
+                else
+                {
+                    if (current > longest) longest = current;
+                    current = 1;
                 }
             }
 
-            return hasFlushDraw || hasStraightDraw;
+            if (current > longest) longest = current;
+
+            return longest;
         }
 
-        private static float CalculateHandStrength(List<Card> hand, List<Card> communityCards, HandType handType)
+
+        private static float CalculateHandStrength(IEnumerable<Card> hand, List<Card> communityCards)
         {
-            float baseStrength = (float)handType / 10f; // 기본 핸드 타입 강도
+            List<Card> cards = new List<Card>(hand);
+            if (cards == null) throw new ArgumentNullException(nameof(cards));
+            cards.AddRange(communityCards);
 
-            // 하이카드 가치 추가
-            float highCardValue = hand.Max(c => (float)c.number / 14f) * 0.2f;
-
-            // 키커 가치 추가
-            float kickerValue = hand.Min(c => (float)c.number / 14f) * 0.1f;
-
-            // 드로우 가치 계산
-            float drawValue = 0f;
-            if (handType == HandType.Draw)
+            if (cards.Count >= 5)
             {
-                var allCards = new List<Card>(hand);
-                allCards.AddRange(communityCards);
-
-                if (allCards.GroupBy(c => c.suit).Any(g => g.Count() == 4))
-                    drawValue = 0.3f; // 플러시 드로우
-                else
-                    drawValue = 0.2f; // 스트레이트 드로우
+                Rank rank = RankTracker.CreateRank5Cards(cards);
+                return RankTracker.GetRankStrength(rank);
             }
-
-            return Mathf.Clamp01(baseStrength + highCardValue + kickerValue + drawValue);
-        }
-
-        private static HandType AnalyzeDraws(IReadOnlyCollection<Card> cards)
-        {
-            bool hasFlushDraw = cards.GroupBy(c => c.suit).Any(g => g.Count() == 4);
-            if (hasFlushDraw) return HandType.Draw;
-
-            List<int> orderedRanks = cards.Select(c => (int)c.number).OrderBy(r => r).ToList();
-            int gaps = 0;
-            for (int i = 0; i < orderedRanks.Count - 1; i++)
+            else
             {
-                gaps += orderedRanks[i + 1] - orderedRanks[i] - 1;
-                if (gaps > 1) break;
+                return CalIncompleteCardsStrength(cards);
             }
-
-            return gaps <= 1 ? HandType.Draw : HandType.HighCard;
         }
-
-        private static bool IsPlayableHand(Card card1, Card card2)
-        {
-            bool isSuited = card1.suit == card2.suit;
-            int rankDiff = Mathf.Abs((int)card1.number - (int)card2.number);
-
-            return (rankDiff <= 2 && isSuited) ||
-                   ((int)card1.number >= (int)Number.X && (int)card2.number >= (int)Number.X);
-        }
-
-        private static Round DetermineGameStage(ICollection communityCards)
-        {
-            return communityCards.Count switch
-            {
-                0 => Round.PreFlop,
-                3 => Round.Flop,
-                4 => Round.Turn,
-                5 => Round.River,
-                _ => Round.PreFlop
-            };
-        }
-
-        // Helper methods for position-based play
-        private int GetPlayerCount() => TurnSystem.Instance.GetActorCount();
-        private int GetMyPosition() => TurnSystem.Instance.GetPosition(this);
     }
 }

@@ -2,6 +2,7 @@
 using System.Linq;
 using Poker;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class CardContainer : MonoBehaviour
 {
@@ -10,7 +11,7 @@ public class CardContainer : MonoBehaviour
     [SerializeField] private float fanAngle = 10f; // 카드들이 펼쳐질 때 회전 각도
     [SerializeField] private Vector3 centerOffset = Vector3.zero; // 핸드 중앙 오프셋
     
-    private readonly List<CardObject> _cards = new List<CardObject>();
+    [SerializeField] private List<CardObject> cards = new List<CardObject>();
 
     /// <summary>
     /// 손에 카드를 추가한다.
@@ -20,7 +21,7 @@ public class CardContainer : MonoBehaviour
     {
         // 카드의 parent를 Hand로 설정
         card.transform.SetParent(this.transform, worldPositionStays: false);
-        _cards.Add(card);
+        cards.Add(card);
         UpdateCardPositions();
     }
 
@@ -29,7 +30,7 @@ public class CardContainer : MonoBehaviour
     /// </summary>
     public void RemoveCard(CardObject card)
     {
-        if (!_cards.Remove(card)) return;
+        if (!cards.Remove(card)) return;
         
         card.transform.SetParent(null); // 핸드로부터 분리
         UpdateCardPositions();
@@ -40,11 +41,11 @@ public class CardContainer : MonoBehaviour
     /// </summary>
     public void Clear()
     {
-        foreach (CardObject c in _cards)
+        foreach (CardObject c in cards)
         {
             c.transform.SetParent(null);
         }
-        _cards.Clear();
+        cards.Clear();
         // 굳이 UpdateCardPositions 필요 없음(카드 없으니)
     }
 
@@ -53,7 +54,11 @@ public class CardContainer : MonoBehaviour
     /// </summary>
     private void UpdateCardPositions()
     {
-        int count = _cards.Count;
+        // cards중 null인 GameObjects 제거
+        cards.RemoveAll(card => card == null);
+        
+        
+        int count = cards.Count;
         if (count == 0) return;
 
         // 중앙을 기준으로 카드 배치
@@ -63,7 +68,7 @@ public class CardContainer : MonoBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            CardObject card = _cards[i];
+            CardObject card = cards[i];
             float indexOffset = i - mid; 
             
             // x축으로 cardSpacing만큼 펼쳐지고, fanAngle을 중심으로 회전
@@ -85,14 +90,38 @@ public class CardContainer : MonoBehaviour
     /// </summary>
     public List<CardObject> GetCardObjects()
     {
-        return _cards.ToList();
+        return cards.ToList();
     }
     
     public List<Card> GetCards()
     {
-        return _cards.Select(card => card.GetCard()).ToList();
+        return cards.Select(card => card.GetCard()).ToList();
     }
-    
+
+    private void Start()
+    {
+        TurnSystem.Instance.OnRoundEnd.AddListener(RoundClear);
+    }
+
+    private void RoundClear()
+    {
+        DeckObject deck = TurnSystem.Instance.GetDeck();
+        
+        var targetCards = cards.ToList();
+        foreach(CardObject card in targetCards)
+        {
+            RemoveCard(card);
+            
+            // TurnSystem의 Community Card를 가져와서 해당 Container에 전부 Move
+            Transform tsf = deck.transform;
+            card.MoveToPosition(
+                tsf.position,
+                tsf.rotation,
+                0.5f,
+                () => deck.AddCard(card));
+        }
+    }
+
 #if UNITY_EDITOR
     private void OnDrawGizmos()
     {

@@ -46,11 +46,15 @@ namespace Actor
             int amount = curRoundBet - _curRoundBet;
             
             if(amount < 0) return false;
-            if (amount < money) return false;
+            if (money < amount) return false;
             
             _curRoundBet += amount;
             money -= amount;
-            BettingSystem.Instance.Bet(amount, _curRoundBet);
+            if (money == 0)
+            {
+                _isAllIn = true;
+            }
+            BettingSystem.Instance.Bet(this, amount, _curRoundBet);
             _bettingChipVisualizer.SetMoney(money);
             
             return true;
@@ -72,11 +76,15 @@ namespace Actor
         protected bool Raise(int amount)
         {
             if (amount < 0) return false;
-            if (amount < money) return false;
+            if (money < amount) return false;
             
             _curRoundBet += amount;
             money -= amount;
-            BettingSystem.Instance.Bet(amount, _curRoundBet);
+            if (money == 0)
+            {
+                _isAllIn = true;
+            }
+            BettingSystem.Instance.Bet(this, amount, _curRoundBet);
             _bettingChipVisualizer.SetMoney(money);
             
             return true;
@@ -85,12 +93,16 @@ namespace Actor
         protected bool Check()
         {
             if(CanCheck() is false) return false;
+            
+            BettingSystem.Instance.Check();
             return true;
         }
 
         protected bool Fold()
         {
             _hasFolded = true;
+            
+            BettingSystem.Instance.Fold(this);
             return true;
         }
         protected bool CanCheck()
@@ -101,7 +113,7 @@ namespace Actor
         /// <summary>
         /// Fold했거나, All-in을 했거나 하는 등의 상황으로 베팅이 불가능한지 확인합니다.
         /// </summary>
-        public bool CanParticipateInBetting()
+        public bool IsBetable()
         {
             if(_hasFolded) return false;
             if(_isAllIn) return false;
@@ -113,9 +125,21 @@ namespace Actor
         
         public void ResetRoundBet()
         {
+            // if Big blind player. return
+            if (TurnSystem.Instance.IsBlindActor(this) is false) return;
             _curRoundBet = 0;
-            _isAllIn = false;
+        }
+
+        public void ResetGame()
+        {
+            _curRoundBet = 0;
             _hasFolded = false;
+            _isAllIn = false;
+        }
+
+        private void Start()
+        {
+            TurnSystem.Instance.OnRoundEnd.AddListener(ResetGame);
         }
         
         #region GETTER
@@ -142,7 +166,7 @@ namespace Actor
         
         #endregion
 
-        public void AddMoney(int getPot)
+        public void AddMoney(int getPot, bool winnerEffect = false)
         {
             money += getPot;
             _bettingChipVisualizer.SetMoney(money);
@@ -151,6 +175,22 @@ namespace Actor
         public CardContainer GetContainer()
         {
             return _cards;
+        }
+
+        public void BlindBet(int getBigBlindAmount)
+        {
+            Debug.Log("Blind Bet");
+            
+            if (money < getBigBlindAmount)
+            {
+                _isAllIn = true;
+                getBigBlindAmount = money;
+            }
+            
+            money -= getBigBlindAmount;
+            _curRoundBet += getBigBlindAmount;
+            BettingSystem.Instance.Bet(this, getBigBlindAmount, _curRoundBet);
+            _bettingChipVisualizer.SetMoney(money);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
+using UnityEngine;
 using Util;
 
 namespace Poker
@@ -47,7 +48,7 @@ namespace Poker
         {
             // 복제 후 정렬
             var sortedCards = new List<Card>(cards);
-            sortedCards.Sort((a, b) => a.number.CompareTo(b.number));
+            sortedCards.Sort((a, b) => a.number.GetInt().CompareTo(b.number.GetInt()));
             
             // 예외처리 : 10 J Q K A
             if(sortedCards[0].number is Number.A &&
@@ -61,10 +62,10 @@ namespace Poker
             }
             
             // checking is straight
-            int start = (int) sortedCards[0].number;
+            int start = sortedCards[0].number.GetInt();
             for (int i = 1; i < sortedCards.Count; i++)
             {
-                if ((int)sortedCards[i].number == start + i) continue;
+                if (sortedCards[i].number.GetInt() == start + i) continue;
                 
                 highestCard = Card.None();
                 return false;
@@ -79,7 +80,7 @@ namespace Poker
             var curSuit = cards[0].suit;
             bool isFlush = cards.TrueForAll(card => card.suit == curSuit);
             
-            suit = isFlush ? curSuit : Suit.SPADE;
+            suit = isFlush ? curSuit : Suit.Spade;
             return isFlush;
         }
         
@@ -131,36 +132,34 @@ namespace Poker
         {
             Check(cards);
             
-            var grouped = cards.GroupBy(card => card.number).ToList();
-            var threeGroup = grouped.FirstOrDefault(g => g.Count() == 3);
+            List<IGrouping<Number, Card>> grouped = cards.GroupBy(card => card.number).ToList();
+            IGrouping<Number, Card> threeGroup = grouped.FirstOrDefault(g => g.Count() == 3);
             
             firstKicker = Card.None();
             secondKicker = Card.None();
             threeCard = Card.None();
 
-            if (threeGroup != null)
-            {
-                threeCard = threeGroup.First();
+            if (threeGroup == null) return false;
+            threeCard = threeGroup.First();
 
-                foreach (Card c in cards)
-                {
-                    if (c.number == threeCard.number) continue;
+            foreach (Card c in cards)
+            {
+                if (c.number == threeCard.number) continue;
                     
-                    if (firstKicker.number == Number.NONE)
-                    {
-                        firstKicker = c;
-                    }
-                    else
-                    {
-                        secondKicker = c;
+                if (firstKicker.number == Number.NONE)
+                {
+                    firstKicker = c;
+                }
+                else
+                {
+                    secondKicker = c;
                         
-                        // bigger should be first kicker
-                        if (firstKicker.number < secondKicker.number)
-                        {
-                            (firstKicker, secondKicker) = (secondKicker, firstKicker);
+                    // bigger should be first kicker
+                    if (firstKicker.number.GetInt() < secondKicker.number.GetInt())
+                    {
+                        (firstKicker, secondKicker) = (secondKicker, firstKicker);
                             
-                            return true;
-                        }
+                        return true;
                     }
                 }
             }
@@ -196,8 +195,8 @@ namespace Poker
         {
             Check(cards);
             
-            var grouped = cards.GroupBy(card => card.number).ToList();
-            var pairGroup = grouped.FirstOrDefault(g => g.Count() == 2);
+            List<IGrouping<Number, Card>> grouped = cards.GroupBy(card => card.number).ToList();
+            IGrouping<Number, Card> pairGroup = grouped.FirstOrDefault(g => g.Count() == 2);
 
             kickers = new List<Card>();
             
@@ -213,7 +212,7 @@ namespace Poker
                     if (kickers.Count == 3) break;
                 }
                 
-                kickers.Sort((a, b) => b.number.CompareTo(a.number));
+                kickers.Sort((a, b) => b.number.GetInt().CompareTo(a.number.GetInt()));
                 return true;
             }
 
@@ -225,9 +224,10 @@ namespace Poker
         {
             Check(cards);
             
-            highCard = cards.OrderByDescending(card => card.number).First();
+            highCard = cards.OrderByDescending(card => card.number.GetInt()).First();
             return true;
         }
+        
         
         public static Rank CreateRank5Cards(in List<Card> cards)
         {
@@ -279,13 +279,18 @@ namespace Poker
             Card highest = Card.None();
             foreach (Card card in cards)
             {
-                if (card.number > highest.number)
+                if (card.number.GetInt() > highest.number.GetInt())
                 {
                     highest = card;
                 }
             }
          
-            return new Rank(HandRank.HighCard, cards, new List<Card> { highest });
+            var ret = new Rank(HandRank.HighCard, cards, new List<Card>
+            {
+                highest
+            });
+            
+            return ret;
         }
 
         /// <summary>
@@ -297,16 +302,30 @@ namespace Poker
         /// <exception cref="Exception">카드의 개수가 5개 미만일 경우 발생합니다.</exception>
         public static Rank GetPossibleMaxRank(in List<Card> hands, in List<Card> communityCards = null)
         {
+            Debug.Log("RankTracker.cs : GetPossibleMaxRank called with hands : " +
+                      hands.Count + " communityCards : " + 
+                      communityCards?.Count
+            );
+            
             List<Card> cards = new (hands); 
             if (communityCards != null) cards.AddRange(communityCards);
+            else
+            {
+                Debug.LogWarning("Community cards are null");
+            }
 
             if (cards.Count < 5)
             {
                 throw new Exception("Invalid number of cards. Expected 5 or more, got " + cards.Count);
             }
 
-            List<List<Card>> combinations = Combinatorics.GetCombinations(hands, 5);
+            List<List<Card>> combinations = Combinatorics.GetCombinations(cards, 5);
             Rank bestRank = null;
+
+            if (combinations.Count == 0)
+            {
+                throw new Exception("No combination found.");
+            }
 
             foreach (List<Card> combination in combinations)
             {
@@ -319,11 +338,47 @@ namespace Poker
 
             return bestRank;
         }
+
+        /// <summary>
+        /// 각 카드의 Rank가 얼마나 강한 streangth를 갖는지 표현합니다.
+        /// 0 ~ 1의 값을 가집니다.
+        /// </summary>
+        /// <param name="rank"></param>
+        /// <returns></returns>
+        public static float GetRankStrength(Rank rank)
+        {
+            switch (rank.handRank)
+            {
+                case HandRank.RoyalFlush:
+                    return 1.0f;
+                case HandRank.StraightFlush:
+                    return 0.98f;
+                case HandRank.FourOfAKind:
+                    return 0.9f;
+                case HandRank.FullHouse:
+                    return 0.8f;
+                case HandRank.Flush:
+                    return 0.7f;
+                case HandRank.Straight:
+                    return 0.65f;
+                case HandRank.ThreeOfAKind:
+                    return 0.6f;
+                case HandRank.TwoPair:
+                    return 0.4f + (rank.cards[0].number.GetInt() / 100.0f);
+                case HandRank.Pair:
+                    return 0.2f + (rank.cards[0].number.GetInt() / 100.0f);
+                case HandRank.HighCard:
+                    return 0.0f + (rank.cards[0].number.GetInt() / 100.0f);
+                default:
+                    return 0.0f;
+            }
+        }
     }
 
 
     public enum HandRank
     {
+        Incomplete,
         HighCard,
         Pair,
         TwoPair,

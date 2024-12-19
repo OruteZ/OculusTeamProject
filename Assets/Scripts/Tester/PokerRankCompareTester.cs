@@ -12,8 +12,8 @@ namespace Tester
             for (int i = 0; i < 5; i++)
             {
                 cards.Add(new Card(
-                    (Number)Random.Range(1, (int)Number.LENGTH),
-                    (Suit  )Random.Range(0, (int)Suit  .LENGTH)
+                    Random.Range(1, (int)Number.LENGTH).GetNumber(),
+                    (Suit  )Random.Range(0, (int)Suit  .Length)
                     ));
             }
 

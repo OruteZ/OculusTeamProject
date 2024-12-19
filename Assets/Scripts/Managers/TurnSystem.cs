@@ -5,6 +5,7 @@ using Actor;
 using JetBrains.Annotations;
 using Poker;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.Serialization;
 using Util;
 
@@ -14,11 +15,22 @@ public class TurnSystem : MonoBehaviour
     
     private CardController _cardController;
     [SerializeField] private List<BettingActor> actors;
+    [SerializeField] private BettingActor currentPlayer;
     [SerializeField] private int blindBtn;
 
     [SerializeField] private bool debugMode;
+    
+    [Header("Important Card Containers")]
     [SerializeField] private CardContainer communityCardContainer;
+    [SerializeField] private DeckObject dealersDeck;
+    
     private Round _currentRound;
+    
+    public UnityEvent OnRoundEnd 
+    {
+        get; 
+        private set;
+    }
     
     private void Awake()
     {
@@ -31,6 +43,7 @@ public class TurnSystem : MonoBehaviour
         
         _cardController = FindObjectOfType<CardController>();
         actors = FindObjectsByType<BettingActor>(FindObjectsSortMode.None).ToList();
+        OnRoundEnd = new UnityEvent();
 
         if (communityCardContainer == null)
         {
@@ -54,58 +67,83 @@ public class TurnSystem : MonoBehaviour
     [MustDisposeResource]
     private IEnumerator GameFlow()
     {
-        BettingSystem.Instance.ResetPot();
-        
-        // BigBline Actor 세팅
-        blindBtn++;
-        blindBtn %= actors.Count;
-        
-        // 1. Pre-Flop: 각 플레이어에게 2장씩 카드 지급
-        yield return DealHoleCards();
-        
-        yield return new WaitForSeconds(1f);
-        
-        // Pre-Flop 베팅
-        _currentRound = Round.PreFlop;
-        yield return PlayBetRound();
-        
-        
-        yield return new WaitForSeconds(1f);
-
-        // 베팅 결과 플레이어가 2명이상 남아있는지 확인
-        if (GetActiveActors().Count > 1)
+        while (true)
         {
-            // 2. Flop: 커뮤니티 카드 3장 오픈
-            _currentRound = Round.Flop;
-            yield return DealFlop();
-            yield return PlayBetRound();
+            BettingSystem.Instance.ResetPot();
+        
+            // BigBline Actor 세팅
+            blindBtn++;
+            blindBtn %= actors.Count;
+            
+            var blindActor = actors[blindBtn];
+            blindActor.BlindBet(BettingSystem.Instance.GetBigBlindAmount());
+            
+        
+            // 1. Pre-Flop: 각 플레이어에게 2장씩 카드 지급
+            yield return DealHoleCards();
+            yield return new WaitForSeconds(1f);
+        
+            // Pre-Flop 베팅
+            _currentRound = Round.PreFlop;
+            yield return PlayBetRound(true);
+        
+        
+            yield return new WaitForSeconds(1f);
+
+            // 베팅 결과 플레이어가 2명이상 남아있는지 확인
+            if (GetBetableActors().Count > 1)
+            {
+                // 2. Flop: 커뮤니티 카드 3장 오픈
+                _currentRound = Round.Flop;
+                yield return DealFlop();
+                yield return PlayBetRound();
+            }
+        
+            yield return new WaitForSeconds(1f);
+
+            if (GetBetableActors().Count > 1)
+            {
+                // 3. Turn: 커뮤니티 카드 1장 추가
+                _currentRound = Round.Turn;
+                yield return DealTurn();
+                yield return PlayBetRound();
+            }
+        
+            yield return new WaitForSeconds(1f);
+
+            if (GetBetableActors().Count > 1)
+            {
+                // 4. River: 커뮤니티 카드 1장 추가
+                _currentRound = Round.River;
+                yield return DealRiver();
+                yield return PlayBetRound();
+            }
+        
+            yield return new WaitForSeconds(1f);
+        
+            // 두 사람 이상 참여했는데 만약 커뮤니티 카드가 5장보다 적다면 해당 수만큼 추가로 덱에서 뽑아서 오픈
+            if (communityCardContainer.GetCards().Count < 5 && GetNotFoldedActors().Count > 1)
+            {
+                yield return _cardController.OrderDealing(communityCardContainer, 5 - communityCardContainer.GetCards().Count);
+            }
+
+            // 쇼다운 로직 (핸드 랭킹 비교, 승자 결정)
+            _currentRound = Round.Showdown;
+            Showdown();
+        
+            // 초기화
+            BettingSystem.Instance.ResetPot();
+            OnRoundEnd.Invoke();
+            
+            // Game 종료 : 돈이 다 떨어진 플레이어는 actors에서 완전 제외
+            actors = actors.Where(actor => actor.GetMoney() > 0).ToList();
+            if (actors.Count < 2)
+            {
+                break;
+            }
         }
         
-        yield return new WaitForSeconds(1f);
-
-        if (GetActiveActors().Count > 1)
-        {
-            // 3. Turn: 커뮤니티 카드 1장 추가
-            _currentRound = Round.Turn;
-            yield return DealTurn();
-            yield return PlayBetRound();
-        }
-        
-        yield return new WaitForSeconds(1f);
-
-        if (GetActiveActors().Count > 1)
-        {
-            // 4. River: 커뮤니티 카드 1장 추가
-            _currentRound = Round.River;
-            yield return DealRiver();
-            yield return PlayBetRound();
-        }
-        
-        yield return new WaitForSeconds(1f);
-
-        // 쇼다운 로직 (핸드 랭킹 비교, 승자 결정)
-        _currentRound = Round.Showdown;
-        Showdown();
+        // DetermineWinner();
     }
 
     private IEnumerator DealHoleCards()
@@ -136,64 +174,75 @@ public class TurnSystem : MonoBehaviour
         yield return _cardController.OrderDealing(communityCardContainer,1);
     }
 
-    private IEnumerator PlayBetRound()
+    private IEnumerator PlayBetRound(bool isPreFlop = false)
     {
-        // 라운드 초기화
-        BettingSystem.Instance.ResetRound();
+        BettingSystem.Instance.ResetRound(isPreFlop);
         foreach (BettingActor actor in actors)
         {
             actor.ResetRoundBet();
         }
 
-        List<BettingActor> activeActors = GetActiveActors();
-        int startIndex = blindBtn; // 빅 블라인드 플레이어부터 시작
+        List<BettingActor> activeActors = GetBetableActors();
+        int startIndex = blindBtn;
         bool hasRaise = true;
 
-        // 누군가 레이즈를 하면, 그 시점부터 다음 플레이어를 시작점으로 하여 정확히 한 바퀴를 돈다.
-        // hasRaise가 true인 한 반복
+        // while 루프: 레이즈 발생시 다음 사이클로 넘어감
         while (hasRaise && activeActors.Count > 0)
         {
             hasRaise = false;
-
+        
+            // 한 사이클 동안 모든 액티브 플레이어에게 액션 기회 부여
             for (int i = 0; i < activeActors.Count; i++)
             {
                 yield return new WaitForSeconds(1f);
-                
+            
                 BettingActor actor = activeActors[(startIndex + i) % activeActors.Count];
-                if (actor.CanParticipateInBetting() == false) continue;
+                currentPlayer = actor;
+                if (!actor.IsBetable()) continue;
 
-                // Debug 모드에서 Space키 대기
                 if (debugMode)
                 {
                     yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Space));
                 }
 
-                // 플레이어 액션 수행
+                // 플레이어 액션
                 yield return actor.Play();
+                Debug.Log("Actor Player Finished");
+                Debug.Log("--------------------");
 
-                // 레이즈가 발생했다면, 해당 플레이어의 다음 플레이어부터 한 바퀴 다시 돈다.
+                // 레이즈 발생 시 다음 사이클 진행
                 if (BettingSystem.Instance.WasLastActionRaise())
                 {
-                    // 레이즈를 한 플레이어의 인덱스
+                    Debug.Log("Raise Detected");
+                    
                     int raiserIndex = (startIndex + i) % activeActors.Count;
-
-                    // 다음 플레이어를 시작점으로 설정
                     startIndex = (raiserIndex + 1) % activeActors.Count;
-
                     hasRaise = true;
-                    break; // 현재 for 루프 종료 -> while 루프 다음 사이클에서 다시 시작
+                    break;
                 }
-
-                // 베팅이 종료 조건에 도달했다면
-                if (HasBetFinished())
+                
+                // 만약 Fold하지 않은 플레이어가 단 한명이거나, 모두 올인 or Fold일 경우 배팅 라운드 강제 종료
+                int nonFoldedCnt = GetNotFoldedActors().Count;
+                int betableCnt = GetBetableActors().Count;
+                Debug.Log($"NonFolded: {nonFoldedCnt}, Betable: {betableCnt}");
+                
+                if (nonFoldedCnt < 1 || betableCnt <= 1)
                 {
                     break;
                 }
             }
 
-            activeActors = GetActiveActors();
+            // 한 사이클 종료 후, 레이즈가 없었다면 종료 조건 재확인
+            if (!hasRaise && HasBetFinished())
+            {
+                break; // 베팅 라운드 종료
+            }
+
+            // 액티브 플레이어 목록 갱신
+            activeActors = GetBetableActors();
         }
     }
+
 
 
     private bool HasBetFinished()
@@ -204,52 +253,105 @@ public class TurnSystem : MonoBehaviour
         // 이 경우 베팅 라운드 종료.
 
         // 간단한 판정 로직 예:
-        List<BettingActor> activeActors = GetActiveActors();
-        if (activeActors.Count <= 1)
+        if (GetNotFoldedActors().Count <= 1)
         {
             return true;
         }
-
+        
+        List<BettingActor> activeActors = GetBetableActors();
         int currentBet = BettingSystem.Instance.GetCurrentBet();
         // 모든 액터가 currentBet에 맞춰 콜 또는 체크한 상태인지 확인
         return activeActors.All(actor => actor.GetCurRoundBet() == currentBet);
-
         // 여기까지 왔으면 모두가 currentBet에 맞춰서 정렬된 상태
     }
 
-    private List<BettingActor> GetActiveActors()
+    private List<BettingActor> GetBetableActors()
     {
-        return actors.Where(actor => actor.CanParticipateInBetting()).ToList();
-    }
-    
-    private void FoldCall()
-    {
-        // 필요시 구현
+        return actors.Where(actor => actor.IsBetable()).ToList();
     }
 
-    // 필요하다면 쇼다운 등 추가 로직
-    private void Showdown()
+   private void Showdown()
+{
+    // 사이드 팟을 포함한 모든 팟을 가져온다.
+    List<Pot> pots = BettingSystem.Instance.GetAllPots();
+
+    // 커뮤니티 카드
+    List<Card> communityCards = communityCardContainer.GetCards();
+
+    int potIdx = 0;
+    // 각 팟에 대해 승자를 결정
+    foreach (Pot pot in pots)
     {
-        // 남은 플레이어들 중 승자 결정 로직
-        // RankTracker 등을 활용하여 승자 결정
+        Debug.Log($"Pot {++potIdx} with {pot.TotalAmount} chips");
         
-        List<Card> communityCards = communityCardContainer.GetCards();
+        // 해당 팟에 참여 자격이 있는 플레이어 목록(폴드하지 않았고, 올인이나 체크 상관없이 여전히 핸드 유지 중)
+        List<BettingActor> eligiblePlayers = pot.EligiblePlayers
+            .Where(p => !p.GetHasFolded()) // 폴드한 플레이어 제외
+            .ToList();
         
-        BettingActor winner = actors[0];
-        Rank winnerRank = RankTracker.GetPossibleMaxRank(winner.GetContainer().GetCards(), communityCards);
-        
-        foreach (BettingActor actor in actors)
+        // eligiblePlayers가 없을 경우(모두 폴드), pot은 그냥 홀딩되거나(실제 게임 룰에선 거의 없음) 무승부 처리가 될 수 있음.
+        // 여기서는 eligiblePlayers가 없으면 그냥 다음 팟으로 넘어감
+        if (eligiblePlayers.Count == 0)
         {
-            Rank currentRank = RankTracker.GetPossibleMaxRank(actor.GetContainer().GetCards(), communityCards);
-
-            if (currentRank.CompareTo(winnerRank) <= 0) continue;
-            winner = actor;
-            winnerRank = currentRank;
+            continue;
         }
         
-        // 승자에게 팟 전달
-        winner.AddMoney(BettingSystem.Instance.GetPot());
+        if (eligiblePlayers.Count == 1)
+        {
+            // 한 명만 남은 경우, 해당 플레이어에게 팟 전체를 줌
+            BettingActor winner = eligiblePlayers[0];
+            winner.AddMoney(pot.TotalAmount);
+
+            Debug.Log("All other players folded");
+            Debug.Log($"Winner: {winner.name}");
+            Debug.Log($"Split Amount: {pot.TotalAmount}");
+            continue;
+        }
+
+        // 각 플레이어의 핸드 랭크를 구하고 최고 랭크 비교
+        Rank bestRank = null;
+        List<BettingActor> winners = new List<BettingActor>();
+
+        foreach (BettingActor actor in eligiblePlayers)
+        {
+            Debug.Log($"Actor: {actor.name}");
+            
+            Rank currentRank = RankTracker.GetPossibleMaxRank(actor.GetContainer().GetCards(), communityCards);
+            if (currentRank == null)
+            {
+                Debug.LogWarning("Rank is null");
+                continue;
+            }
+            Debug.Log($"Rank: {currentRank}");
+
+            if (bestRank == null || currentRank.CompareTo(bestRank) > 0)
+            {
+                // 더 높은 랭크 발견 시 갱신
+                bestRank = currentRank;
+                winners.Clear();
+                winners.Add(actor);
+            }
+            else if (currentRank.CompareTo(bestRank) == 0)
+            {
+                // 랭크 동률 발생 시, 우승자 리스트에 추가
+                winners.Add(actor);
+            }
+        }
+
+        // 우승자들에게 팟 분배
+        int potAmount = pot.TotalAmount;
+        int splitAmount = potAmount / winners.Count;
+
+        foreach (BettingActor winner in winners)
+        {
+            Debug.Log($"Winner: {winner.name}");
+            Debug.Log($"Split Amount: {splitAmount}");
+            
+            winner.AddMoney(splitAmount);
+        }
     }
+}
+
 
     public List<Card> GetCommunityCards()
     {
@@ -261,7 +363,7 @@ public class TurnSystem : MonoBehaviour
         return _currentRound;
     }
     
-    public bool IsBlindPlayer(BettingActor actor)
+    public bool IsBlindActor(BettingActor actor)
     {
         return actors.IndexOf(actor) == blindBtn;
     }
@@ -274,6 +376,23 @@ public class TurnSystem : MonoBehaviour
     public int GetPosition(BettingActor bettingAI)
     {
         return actors.IndexOf(bettingAI);
+    }
+
+    public List<BettingActor> GetNotFoldedActors()
+    {
+        return actors.Where(
+            actor => !actor.GetHasFolded())
+            .ToList();
+    }
+
+    public CardContainer GetCommunityCardContainer()
+    {
+        return communityCardContainer;
+    }
+
+    public DeckObject GetDeck()
+    {
+        return dealersDeck;
     }
 }
 

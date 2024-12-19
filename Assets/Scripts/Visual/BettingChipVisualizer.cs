@@ -36,7 +36,7 @@ public class BettingChipVisualizer : MonoBehaviour
         foreach (BettingChip chip in bettingChips)
         {
             int value = chip.Value;
-            int count = chipCount.ContainsKey(value) ? chipCount[value] : 0;
+            int count = chipCount.GetValueOrDefault(value, 0);
             if (count == 0)
                 continue;
 

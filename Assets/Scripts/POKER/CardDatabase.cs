@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Poker;
 using UnityEngine;
@@ -32,7 +33,17 @@ public class CardDatabase : ScriptableObject
 
     public GameObject GetPrefab(Suit suit, Number number)
     {
-        return _cardDict.GetValueOrDefault((suit, number));
+        cardObjEntries = cardObjEntries ?? Array.Empty<CardEntry>();
+        
+        foreach (CardEntry entry in cardObjEntries)
+        {
+            if (entry.suit == suit && entry.number == number)
+            {
+                return entry.cardPrefab;
+            }
+        }
+        
+        return null;
     }
     
     public List<CardObject> GetAllCards()

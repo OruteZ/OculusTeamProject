@@ -5,7 +5,7 @@ namespace Poker
 {
     public class Rank : IComparable<Rank>
     {
-        protected bool Equals(Rank other)
+        private bool Equals(Rank other)
         {
             return handRank == other.handRank && Equals(kickers, other.kickers) && Equals(cards, other.cards);
         }
@@ -25,7 +25,7 @@ namespace Poker
 
         public readonly HandRank handRank;
         public readonly List<Card> kickers;
-        public List<Card> cards;
+        public readonly List<Card> cards;
         
         public Rank(HandRank handRank, List<Card> cards, List<Card> kickers)
         {
@@ -58,7 +58,7 @@ namespace Poker
             {
                 if (kickers[i].number != other.kickers[i].number)
                 {
-                    return kickers[i].number.CompareTo(other.kickers[i].number);
+                    return kickers[i].number.GetInt().CompareTo(other.kickers[i].number.GetInt());
                 }
             }
             
@@ -80,12 +80,31 @@ namespace Poker
         
         public static bool operator ==(Rank left, Rank right)
         {
+            if (ReferenceEquals(left, null))
+            {
+                return ReferenceEquals(right, null);
+            }
             return left.CompareTo(right) == 0;
         }
         
         public static bool operator !=(Rank left, Rank right)
         {
+            if (ReferenceEquals(left, null))
+            {
+                return !ReferenceEquals(right, null);
+            }
             return left.CompareTo(right) != 0;
+        }
+        
+        public override string ToString()
+        {
+            string str = $"{handRank} - ";;
+            foreach (Card card in cards)
+            {
+                str += card.number + " " + card.suit + " | ";
+            }
+
+            return str;
         }
     }
 }

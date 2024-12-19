@@ -179,4 +179,16 @@ public class DeckObject : MonoBehaviour
     {
         return headingContainer;
     }
+
+    public void AddCard(CardObject card)
+    {
+        Card cardInfo = card.GetCard();
+        GameObject newObj = Instantiate(cardDatabase.GetPrefab(cardInfo.suit, cardInfo.number), transform);
+        newObj.transform.SetParent(this.transform, worldPositionStays: false);
+        
+        _cards.Add(newObj.GetComponent<CardObject>());
+        Destroy(card.gameObject);
+        
+        UpdateDeckLayout();
+    }
 }

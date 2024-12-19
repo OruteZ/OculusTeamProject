@@ -678,12 +678,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e742cefc5a8b2154f9ab27f9980ccb48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  money: 100
+  money: 500
   _curRoundBet: 0
   _hasFolded: 0
   _isAllIn: 0
   _bettingChipVisualizer: {fileID: 34420919}
   _cards: {fileID: 1034084785}
+  currentHandStrength: 0
 --- !u!1001 &36196807
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5314,8 +5315,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d5e7f718b3834041918cf173b95a7b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  blindAmount: 10
   _currentBet: 0
-  _totalPot: 0
   _potVisualizer: {fileID: 1168263738}
 --- !u!4 &324902341
 Transform:
@@ -13353,6 +13354,7 @@ MonoBehaviour:
   cardSpacing: 0.15
   fanAngle: 0
   centerOffset: {x: 0, y: 0, z: 0}
+  cards: []
 --- !u!4 &919615141
 Transform:
   m_ObjectHideFlags: 0
@@ -15587,6 +15589,7 @@ MonoBehaviour:
   cardSpacing: 0.15
   fanAngle: 0
   centerOffset: {x: 0, y: 0, z: 0}
+  cards: []
 --- !u!4 &1034084786
 Transform:
   m_ObjectHideFlags: 0
@@ -18709,12 +18712,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e742cefc5a8b2154f9ab27f9980ccb48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  money: 0
+  money: 500
   _curRoundBet: 0
   _hasFolded: 0
   _isAllIn: 0
-  _bettingChipVisualizer: {fileID: 34420919}
+  _bettingChipVisualizer: {fileID: 1245950989}
   _cards: {fileID: 919615140}
+  currentHandStrength: 0
 --- !u!1001 &1248832693
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20770,12 +20774,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e742cefc5a8b2154f9ab27f9980ccb48, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  money: 0
+  money: 500
   _curRoundBet: 0
   _hasFolded: 0
   _isAllIn: 0
   _bettingChipVisualizer: {fileID: 1329038660}
   _cards: {fileID: 1961703776}
+  currentHandStrength: 0
 --- !u!1001 &1333173353
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21164,9 +21169,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   actors: []
+  currentPlayer: {fileID: 0}
   blindBtn: 0
   debugMode: 0
   communityCardContainer: {fileID: 2119703301}
+  dealersDeck: {fileID: 229631075}
 --- !u!4 &1346638976
 Transform:
   m_ObjectHideFlags: 0
@@ -28836,74 +28843,6 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1827347523}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1830259701
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187027, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6598815579406187037, guid: 18ddb545287c546e19cc77dc9fbb2189,
-        type: 3}
-      propertyPath: m_Name
-      value: XR Device Simulator
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 18ddb545287c546e19cc77dc9fbb2189, type: 3}
 --- !u!1001 &1837203176
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30915,6 +30854,7 @@ MonoBehaviour:
   cardSpacing: 0.15
   fanAngle: 0
   centerOffset: {x: 0, y: 0, z: 0}
+  cards: []
 --- !u!4 &1961703777
 Transform:
   m_ObjectHideFlags: 0
@@ -33457,6 +33397,7 @@ MonoBehaviour:
   cardSpacing: 0.15
   fanAngle: 0
   centerOffset: {x: 0, y: 0, z: 0}
+  cards: []
 --- !u!4 &2119703302
 Transform:
   m_ObjectHideFlags: 0
@@ -33466,7 +33407,7 @@ Transform:
   m_GameObject: {fileID: 2119703299}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -1.027, y: 0.75, z: 14.234}
+  m_LocalPosition: {x: -1.113, y: 0.753, z: 14.201}
   m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -33847,7 +33788,6 @@ SceneRoots:
   - {fileID: 1194878348}
   - {fileID: 736520273}
   - {fileID: 290928207}
-  - {fileID: 1830259701}
   - {fileID: 1430128134}
   - {fileID: 2119703302}
   - {fileID: 1346638976}

@@ -1,3 +1,5 @@
+using System;
+
 namespace Poker
 {
     public enum Number
@@ -22,16 +24,16 @@ namespace Poker
 
     public enum Suit
     {
-        SPADE,
-        HEART,
-        DIAMOND,
-        CLUB,
+        Spade,
+        Heart,
+        Diamond,
+        Club,
         
-        LENGTH = 4,
+        Length = 4,
     }
 
     [System.Serializable]
-    public struct Card
+    public struct Card : IComparable<Card>
     {
         public Number number;
         public Suit suit;
@@ -47,6 +49,13 @@ namespace Poker
             return suit + " " + number;
         }
         
-        public static Card None() => new Card(Number.NONE, Suit.SPADE);
+        public static Card None() => new Card(Number.NONE, Suit.Spade);
+
+        public int CompareTo(Card other)
+        {
+            int numberComparison = number.GetInt().CompareTo(other.number.GetInt());
+            if (numberComparison != 0) return numberComparison;
+            return suit.CompareTo(other.suit);
+        }
     }
 }
